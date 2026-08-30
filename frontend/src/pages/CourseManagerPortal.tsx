@@ -13,6 +13,12 @@ export const CourseManagerPortal: React.FC = () => {
   const [trainers, setTrainers] = useState<any[]>([]);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
+  // Enrollment Review State
+  const [approvingEnrollmentId, setApprovingEnrollmentId] = useState<string | null>(null);
+  const [rejectingEnrollmentId, setRejectingEnrollmentId] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [processingEnrollment, setProcessingEnrollment] = useState(false);
+
   // New Course Form State
   const [cName, setCName] = useState('');
   const [cCode, setCCode] = useState('');
@@ -148,18 +154,45 @@ export const CourseManagerPortal: React.FC = () => {
     }
   };
 
-  const handleApproveEnrollment = async (enrollmentId: string, action: 'APPROVED' | 'REJECTED') => {
+  const confirmApproveEnrollment = async () => {
+    if (!approvingEnrollmentId) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/batches/approve-enrollment`, {
-        method: 'POST',
+      setProcessingEnrollment(true);
+      const res = await fetch(`${API_BASE_URL}/enrollments/${approvingEnrollmentId}/status`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ enrollmentId, action })
+        body: JSON.stringify({ status: 'ENROLLED' })
       });
       if (!res.ok) throw new Error('Failed to process enrollment');
-      setFeedback({ type: 'success', message: `Enrollment ${action.toLowerCase()} successfully.` });
+      setFeedback({ type: 'success', message: 'Enrollment approved successfully.' });
+      setApprovingEnrollmentId(null);
       fetchData();
     } catch (err: any) {
-      setFeedback({ type: 'error', message: err.message });
+      setFeedback({ type: 'error', message: 'Unable to approve this enrollment. Please try again.' });
+    } finally {
+      setProcessingEnrollment(false);
+    }
+  };
+
+  const confirmRejectEnrollment = async () => {
+    if (!rejectingEnrollmentId) return;
+    if (!rejectionReason.trim()) return;
+    try {
+      setProcessingEnrollment(true);
+      const res = await fetch(`${API_BASE_URL}/enrollments/${rejectingEnrollmentId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ status: 'REJECTED', rejectionReason })
+      });
+      if (!res.ok) throw new Error('Failed to process enrollment');
+      setFeedback({ type: 'success', message: 'Enrollment rejected successfully.' });
+      setRejectingEnrollmentId(null);
+      setRejectionReason('');
+      fetchData();
+    } catch (err: any) {
+      setFeedback({ type: 'error', message: 'Unable to reject this enrollment. Please try again.' });
+    } finally {
+      setProcessingEnrollment(false);
     }
   };
 
@@ -687,18 +720,26 @@ export const CourseManagerPortal: React.FC = () => {
                         <td className="px-4 py-3 text-sm text-slate-700">{en.batchName}</td>
                         <td className="px-4 py-3 text-sm font-semibold text-blue-900">{en.status}</td>
                         <td className="px-4 py-3 text-right space-x-2">
-                          <button
-                            onClick={() => handleApproveEnrollment(en.id, 'APPROVED')}
-                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded"
-                          >
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => handleApproveEnrollment(en.id, 'REJECTED')}
-                            className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded"
-                          >
-                            Reject
-                          </button>
+                          {(en.status === 'REQUESTED' || en.status === 'PENDING') ? (
+                            <>
+                              <button
+                                onClick={() => setApprovingEnrollmentId(en.id)}
+                                className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => setRejectingEnrollmentId(en.id)}
+                                className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded"
+                              >
+                                Reject
+                              </button>
+                            </>
+                          ) : en.status === 'REJECTED' ? (
+                            <span className="text-xs font-bold text-red-600">Rejected</span>
+                          ) : (
+                            <span className="text-xs font-bold text-emerald-600">Approved / Enrolled</span>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -744,6 +785,70 @@ export const CourseManagerPortal: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Approve Enrollment Modal */}
+      {approvingEnrollmentId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Approve Enrollment Request?</h3>
+            <p className="text-sm text-slate-600 mb-6">
+              Are you sure you want to approve this learner's enrollment?
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                disabled={processingEnrollment}
+                onClick={() => setApprovingEnrollmentId(null)}
+                className="px-4 py-2 border border-slate-300 text-slate-700 text-sm font-semibold rounded hover:bg-slate-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={processingEnrollment}
+                onClick={confirmApproveEnrollment}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded shadow-sm transition disabled:opacity-50"
+              >
+                {processingEnrollment ? 'Approving...' : 'Confirm Approval'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reject Enrollment Modal */}
+      {rejectingEnrollmentId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Reject Enrollment Request</h3>
+            <p className="text-sm text-slate-600 mb-4">
+              Please provide a reason for rejecting this learner's enrollment.
+            </p>
+            <textarea
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="Reason for rejection (required)..."
+              className="w-full px-3 py-2 border border-slate-300 rounded text-sm mb-6 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
+              rows={3}
+            />
+            <div className="flex justify-end space-x-3">
+              <button
+                disabled={processingEnrollment}
+                onClick={() => { setRejectingEnrollmentId(null); setRejectionReason(''); }}
+                className="px-4 py-2 border border-slate-300 text-slate-700 text-sm font-semibold rounded hover:bg-slate-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={processingEnrollment || !rejectionReason.trim()}
+                onClick={confirmRejectEnrollment}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded shadow-sm transition disabled:opacity-50"
+              >
+                {processingEnrollment ? 'Rejecting...' : 'Confirm Rejection'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
