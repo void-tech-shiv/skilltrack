@@ -4,11 +4,13 @@
   "private": true,
   "workspaces": [
     "frontend",
+    "frontend-v2",
     "backend"
   ],
   "scripts": {
-    "dev": "npm run dev --workspaces",
-    "build": "npm run build --workspaces",
+    "dev": "npm run dev --workspace=frontend-v2",
+    "build": "npm run build --workspace=frontend-v2",
+    "build:all": "npm run build --workspaces",
     "test": "npm run test --workspaces"
   }
 }

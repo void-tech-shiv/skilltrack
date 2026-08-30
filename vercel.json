@@ -1,0 +1,10 @@
+{
+  "buildCommand": "npm run build --workspace=frontend-v2",
+  "outputDirectory": "frontend-v2/dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
