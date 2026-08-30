@@ -45,13 +45,13 @@ export const LearnerTrainingV2: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
               <div>
                 <span className="font-mono text-xs font-bold text-brand-700">
-                  {en.batch?.course?.code || 'MAHA-EV-401'}
+                  {en.batch?.course?.code || '—'}
                 </span>
                 <h3 className="text-lg font-extrabold text-slate-900 mt-0.5">
-                  {en.batch?.course?.name || 'Technical Course'}
+                  {en.batch?.course?.name || '—'}
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Batch: <b>{en.batch?.name}</b> • Center: <b>{en.batch?.provider?.name || 'Accredited Center'}</b>
+                  Batch: <b>{en.batch?.name}</b> • Center: <b>{en.batch?.provider?.name || '—'}</b>
                 </p>
               </div>
               <StatusBadge status={en.status} />

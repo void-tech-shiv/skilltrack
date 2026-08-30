@@ -63,21 +63,21 @@ export const ProviderLearnersV2: React.FC = () => {
       ),
     },
     {
-      key: 'district',
+      key: 'location',
       header: 'District / Division',
       render: (item) => (
-        <span className="text-xs text-slate-700 font-medium">
-          {item.district || 'Pune'} • {item.division || 'Pune Division'}
-        </span>
+        <div className="text-xs font-medium text-slate-700">
+          {item.district || '—'} {item.division ? `• ${item.division}` : ''}
+        </div>
       ),
     },
     {
       key: 'education',
-      header: 'Education Level',
+      header: 'Highest Qualification',
       render: (item) => (
-        <span className="text-xs text-slate-700">
-          {item.educationLevel?.replace(/_/g, ' ') || 'Graduate'}
-        </span>
+        <div className="text-xs font-medium text-slate-700">
+          {item.educationLevel ? item.educationLevel.replace(/_/g, ' ') : '—'}
+        </div>
       ),
     },
     {
@@ -216,8 +216,8 @@ export const ProviderLearnersV2: React.FC = () => {
                   <p className="font-semibold text-slate-800 mt-0.5">{selectedLearner.educationLevel?.replace(/_/g, ' ') || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Category</p>
-                  <p className="font-semibold text-slate-800 mt-0.5">{selectedLearner.category || 'General'}</p>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Social Category</span>
+                  <p className="font-semibold text-slate-800 mt-0.5">{selectedLearner.category || '—'}</p>
                 </div>
               </div>
 

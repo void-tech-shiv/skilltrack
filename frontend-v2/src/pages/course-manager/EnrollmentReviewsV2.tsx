@@ -94,7 +94,7 @@ export const EnrollmentReviewsV2: React.FC = () => {
       key: 'provider',
       header: 'Training Center',
       render: (item) => (
-        <span className="text-xs text-slate-700">{item.batch?.provider?.name || 'State Partner'}</span>
+        <span className="text-xs text-slate-700">{item.batch?.provider?.name || '—'}</span>
       ),
     },
     {
@@ -196,7 +196,7 @@ export const EnrollmentReviewsV2: React.FC = () => {
                 <p><span className="font-semibold text-slate-700">Learner:</span> {approvingEnrollment.trainee?.firstName} {approvingEnrollment.trainee?.lastName}</p>
                 <p><span className="font-semibold text-slate-700">Batch:</span> {approvingEnrollment.batch?.name}</p>
                 <p><span className="font-semibold text-slate-700">Course:</span> {approvingEnrollment.batch?.course?.name}</p>
-                <p><span className="font-semibold text-slate-700">Center:</span> {approvingEnrollment.batch?.provider?.name || 'State Partner'}</p>
+                <p><span className="font-semibold text-slate-700">Center:</span> {approvingEnrollment.batch?.provider?.name || '—'}</p>
               </div>
             </div>
             <div className="flex justify-end space-x-3">

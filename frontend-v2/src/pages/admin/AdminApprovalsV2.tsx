@@ -218,10 +218,10 @@ export const AdminApprovalsV2: React.FC = () => {
       render: (item) => (
         <div>
           <p className="text-xs text-slate-800 font-medium">
-            {item.educationLevel?.replace(/_/g, ' ') || 'Graduate'}
+            {item.educationLevel ? item.educationLevel.replace(/_/g, ' ') : '—'}
           </p>
           <p className="text-[11px] text-slate-400">
-            {item.category || 'General / Open'}
+            {item.category || '—'}
           </p>
         </div>
       ),
@@ -336,7 +336,7 @@ export const AdminApprovalsV2: React.FC = () => {
               <div key={emp.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 flex items-start justify-between">
                 <div>
                   <h4 className="font-bold text-slate-900 text-sm">{emp.name}</h4>
-                  <p className="text-xs text-slate-500 mt-0.5">{emp.industry || 'Manufacturing'} • {emp.location || 'Pune'}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{emp.industry || '—'} • {emp.location || '—'}</p>
                   <p className="text-xs text-slate-400 font-mono mt-1">{emp.user?.email}</p>
                 </div>
                 <StatusBadge status={emp.user?.status || 'ACTIVE'} />
@@ -367,7 +367,7 @@ export const AdminApprovalsV2: React.FC = () => {
                     <Building2 className="w-5 h-5 text-brand-600" />
                     <h4 className="font-bold text-slate-900 text-sm">{p.name}</h4>
                   </div>
-                  <span className="text-xs font-bold text-slate-500">{p.location || 'Maharashtra'}</span>
+                  <span className="text-xs font-bold text-slate-500">{p.location || '—'}</span>
                 </div>
 
                 <div className="pt-2 border-t border-slate-200 text-xs">
@@ -410,7 +410,7 @@ export const AdminApprovalsV2: React.FC = () => {
               <option value="">— Choose a Provider —</option>
               {providers.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.name} ({p.location || 'Maharashtra'})
+                  {p.name} {p.location ? `(${p.location})` : ''}
                 </option>
               ))}
             </select>
@@ -512,7 +512,7 @@ export const AdminApprovalsV2: React.FC = () => {
                     HIGHEST QUALIFICATION
                   </span>
                   <span className="font-semibold text-slate-900 block mt-1">
-                    {viewingLearner.educationLevel?.replace(/_/g, ' ') || 'Graduate'}
+                    {viewingLearner.educationLevel?.replace(/_/g, ' ') || '—'}
                   </span>
                 </div>
 
@@ -521,7 +521,7 @@ export const AdminApprovalsV2: React.FC = () => {
                     SOCIAL CATEGORY
                   </span>
                   <span className="font-semibold text-slate-900 block mt-1">
-                    {viewingLearner.category || 'General / Open'}
+                    {viewingLearner.category || '—'}
                   </span>
                 </div>
               </div>
