@@ -8,7 +8,6 @@ interface AuthContextType {
   token: string | null;
   login: (token: string, user: User) => void;
   logout: () => void;
-  switchRoleQuick: (role: UserRole) => Promise<void>;
   loading: boolean;
   refreshUser: () => Promise<void>;
 }
@@ -40,8 +39,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const data = await api.get('/auth/me', { token: currentToken });
-      setUser(data.user);
+      const data = await api.get('/auth/me');
+      if (data.user) {
+        setUser(data.user);
+      } else {
+        logout();
+      }
     } catch {
       logout();
     } finally {
@@ -50,17 +53,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [logout]);
 
   useEffect(() => {
-    refreshUser();
-  }, [refreshUser]);
+    if (token) {
+      refreshUser();
+    } else {
+      setLoading(false);
+    }
+  }, [token, refreshUser]);
 
   const login = (newToken: string, newUser: User) => {
     localStorage.setItem('token', newToken);
     setToken(newToken);
     setUser(newUser);
 
-    // Navigate to role workspace
+    // Route dynamically based on authentic user role
     switch (newUser.role) {
       case 'GOVERNMENT_ADMIN':
+      case 'ANALYST':
         navigate('/admin');
         break;
       case 'COURSE_MANAGER':
@@ -84,34 +92,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const switchRoleQuick = async (role: UserRole) => {
-    const emailMap: Record<UserRole, string> = {
-      GOVERNMENT_ADMIN: 'admin@maha.gov.in',
-      COURSE_MANAGER: 'coursemanager@maha.gov.in',
-      TRAINING_PROVIDER: 'provider@maha.gov.in',
-      TRAINER: 'trainer@maha.gov.in',
-      TRAINEE: 'trainee@maha.gov.in',
-      EMPLOYER: 'employer@maha.gov.in',
-    };
-
-    const targetEmail = emailMap[role];
-    if (!targetEmail) return;
-
-    try {
-      setLoading(true);
-      const res = await api.post('/auth/login', { email: targetEmail, password: 'password123' });
-      if (res.token && res.user) {
-        login(res.token, res.user);
-      }
-    } catch (err) {
-      console.error('Quick role switch error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, switchRoleQuick, loading, refreshUser }}>
+    <AuthContext.Provider value={{ user, token, login, logout, loading, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -4,7 +4,8 @@ export type UserRole =
   | 'TRAINING_PROVIDER' 
   | 'TRAINER' // Mapped to 'Teacher' in UI
   | 'TRAINEE' // Mapped to 'Learner' in UI
-  | 'EMPLOYER';
+  | 'EMPLOYER'
+  | 'ANALYST';
 
 export interface User {
   id: string;
