@@ -203,14 +203,30 @@ export const getPendingCompletions = async (req: AuthRequest, res: Response) => 
     const pending = await prisma.enrollment.findMany({
       where: { status: 'COMPLETION_RECOMMENDED' },
       include: {
-        trainee: true,
+        trainee: {
+          include: {
+            attendanceRecords: {
+              include: { session: true }
+            }
+          }
+        },
         batch: { include: { course: true } },
-        attendance: true,
         evidenceSubmissions: true
       },
       orderBy: { completionRecommendedAt: 'desc' }
     });
-    res.json({ pending });
+
+    // Map attendance records that belong to this enrollment's batch directly to the enrollment object
+    const pendingWithAttendance = pending.map(p => {
+      const { attendanceRecords, ...traineeData } = p.trainee;
+      return {
+        ...p,
+        trainee: traineeData,
+        attendance: attendanceRecords.filter(a => a.session.batchId === p.batchId)
+      };
+    });
+
+    res.json({ pending: pendingWithAttendance });
   } catch (error) {
     console.error('getPendingCompletions Error:', error);
     res.status(500).json({ error: 'Internal server error' });
