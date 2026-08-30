@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { User, Calendar, Award, Shield, Upload, FileText, QrCode, ExternalLink, RefreshCw } from 'lucide-react';
+import { User, Calendar, Award, Shield, Upload, FileText, QrCode, ExternalLink, RefreshCw, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 import { API_BASE_URL } from '../config';
 
 export const TraineePortal: React.FC = () => {
@@ -508,56 +508,98 @@ export const TraineePortal: React.FC = () => {
               Automated validation against Maharashtra State Innovation Society certification criteria.
             </p>
 
-            {currentEnrollment && (
-              <div className="space-y-4">
-                <button
-                  onClick={() => handleCheckEligibility(currentEnrollment.id)}
-                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded"
-                >
-                  Run Eligibility Evaluation
-                </button>
-
-                {eligibilityData && (
-                  <div className="bg-slate-50 p-4 rounded border border-slate-200 space-y-2 text-xs">
-                    <div className="flex justify-between">
-                      <span>Attendance: <b>{eligibilityData.criteria?.attendancePercent}%</b> (Required: {eligibilityData.criteria?.attendanceRequired}%)</span>
-                      <span className={eligibilityData.criteria?.attendanceEligible ? 'text-emerald-700 font-bold' : 'text-red-700 font-bold'}>
-                        {eligibilityData.criteria?.attendanceEligible ? 'PASSED' : 'FAILED'}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <span>Module Completion: <b>{eligibilityData.criteria?.modulePercent}%</b> (Required: {eligibilityData.criteria?.moduleRequired}%)</span>
-                      <span className={eligibilityData.criteria?.moduleEligible ? 'text-emerald-700 font-bold' : 'text-red-700 font-bold'}>
-                        {eligibilityData.criteria?.moduleEligible ? 'PASSED' : 'FAILED'}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <span>Evidence Verification:</span>
-                      <span className={eligibilityData.criteria?.evidenceEligible ? 'text-emerald-700 font-bold' : 'text-red-700 font-bold'}>
-                        {eligibilityData.criteria?.evidenceEligible ? 'VERIFIED' : 'PENDING'}
-                      </span>
-                    </div>
-
-                    <div className="pt-2 border-t flex justify-between items-center">
-                      <span className="font-bold">Overall Eligibility:</span>
-                      <button
-                        onClick={() => handleApplyCertificate(currentEnrollment.id)}
-                        disabled={!eligibilityData.isEligible}
-                        className={`px-3 py-1 font-bold rounded ${
-                          eligibilityData.isEligible
-                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                            : 'bg-slate-300 text-slate-500 cursor-not-allowed'
-                        }`}
-                      >
-                        {eligibilityData.isEligible ? 'Apply for Official Certificate' : 'Ineligible (Pending Manager Approval or Thresholds)'}
-                      </button>
-                    </div>
+            {currentEnrollment && (() => {
+              const hasCert = currentEnrollment.certificates?.length > 0;
+              const activeApplication = currentEnrollment.certificateApplications?.[0];
+              
+              if (hasCert) {
+                return (
+                  <div className="bg-emerald-50 p-4 rounded border border-emerald-200 text-sm text-emerald-800 font-medium">
+                    <CheckCircle2 className="w-5 h-5 inline mr-2" />
+                    Your Official Certificate has been issued. You can view and download it below.
                   </div>
-                )}
-              </div>
-            )}
+                );
+              }
+
+              if (activeApplication) {
+                return (
+                  <div className="bg-slate-50 p-4 rounded border border-slate-200 text-sm">
+                    <div className={`flex items-center space-x-1.5 font-bold ${activeApplication.status === 'REJECTED' ? 'text-rose-600' : 'text-amber-600'}`}>
+                      {activeApplication.status === 'REJECTED' ? (
+                        <>
+                          <AlertCircle className="w-5 h-5" />
+                          <span>Application Rejected: {activeApplication.decisionReason || 'Contact support'}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Clock className="w-5 h-5" />
+                          <span>Application Under Review by Government Admin</span>
+                        </>
+                      )}
+                    </div>
+                    {activeApplication.status === 'REJECTED' && (
+                      <button
+                        onClick={() => handleCheckEligibility(currentEnrollment.id)}
+                        className="mt-3 px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded"
+                      >
+                        Re-evaluate Eligibility to Apply Again
+                      </button>
+                    )}
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-4">
+                  <button
+                    onClick={() => handleCheckEligibility(currentEnrollment.id)}
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded"
+                  >
+                    Run Eligibility Evaluation
+                  </button>
+
+                  {eligibilityData && (
+                    <div className="bg-slate-50 p-4 rounded border border-slate-200 space-y-2 text-xs">
+                      <div className="flex justify-between">
+                        <span>Attendance: <b>{eligibilityData.criteria?.attendancePercent}%</b> (Required: {eligibilityData.criteria?.attendanceRequired}%)</span>
+                        <span className={eligibilityData.criteria?.attendanceEligible ? 'text-emerald-700 font-bold' : 'text-red-700 font-bold'}>
+                          {eligibilityData.criteria?.attendanceEligible ? 'PASSED' : 'FAILED'}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between">
+                        <span>Module Completion: <b>{eligibilityData.criteria?.modulePercent}%</b> (Required: {eligibilityData.criteria?.moduleRequired}%)</span>
+                        <span className={eligibilityData.criteria?.moduleEligible ? 'text-emerald-700 font-bold' : 'text-red-700 font-bold'}>
+                          {eligibilityData.criteria?.moduleEligible ? 'PASSED' : 'FAILED'}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between">
+                        <span>Evidence Verification:</span>
+                        <span className={eligibilityData.criteria?.evidenceEligible ? 'text-emerald-700 font-bold' : 'text-red-700 font-bold'}>
+                          {eligibilityData.criteria?.evidenceEligible ? 'VERIFIED' : 'PENDING'}
+                        </span>
+                      </div>
+
+                      <div className="pt-2 border-t flex justify-between items-center">
+                        <span className="font-bold">Overall Eligibility:</span>
+                        <button
+                          onClick={() => handleApplyCertificate(currentEnrollment.id)}
+                          disabled={!eligibilityData.isEligible}
+                          className={`px-3 py-1 font-bold rounded ${
+                            eligibilityData.isEligible
+                              ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                              : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                          }`}
+                        >
+                          {eligibilityData.isEligible ? 'Apply for Official Certificate' : 'Ineligible (Pending Manager Approval or Thresholds)'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Issued Certificates */}

@@ -9,6 +9,7 @@ import { Certificate, Enrollment } from '../../types';
 export const LearnerCertificatesV2: React.FC = () => {
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [applications, setApplications] = useState<any[]>([]);
   const [eligibilities, setEligibilities] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(false);
   const [applying, setApplying] = useState(false);
@@ -25,9 +26,10 @@ export const LearnerCertificatesV2: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [cRes, eRes] = await Promise.all([
+      const [cRes, eRes, aRes] = await Promise.all([
         api.get('/certificates/my').catch(() => ({ certificates: [] })),
         api.get('/enrollments').catch(() => ({ enrollments: [] })),
+        api.get('/certificates/my-applications').catch(() => ({ applications: [] })),
       ]);
 
       const enrollmentsList = eRes.enrollments || [];
@@ -48,6 +50,7 @@ export const LearnerCertificatesV2: React.FC = () => {
 
       setCertificates(cRes.certificates || []);
       setEnrollments(enrollmentsList);
+      setApplications(aRes.applications || []);
       setEligibilities(eligData);
     } catch (err) {
       console.error('Error fetching certificates:', err);
@@ -136,9 +139,13 @@ export const LearnerCertificatesV2: React.FC = () => {
 
         <div className="space-y-4">
           {enrollments.map((en) => {
+            // STATE PRIORITY 1: ISSUED CERTIFICATE EXISTS
             const hasCert = certificates.some((c) => c.enrollmentId === en.id);
-            if (hasCert) return null;
+            if (hasCert) return null; // Handled in Section 1
 
+            // STATE PRIORITY 2: PENDING / REJECTED APPLICATION EXISTS
+            const application = applications.find((a) => a.enrollmentId === en.id);
+            
             const eligibility = eligibilities[en.id];
             const isEligible = eligibility?.isEligible && en.status === 'COMPLETED';
 
@@ -181,28 +188,58 @@ export const LearnerCertificatesV2: React.FC = () => {
                   <div className="text-xs text-slate-400 italic py-2">Loading eligibility metrics...</div>
                 )}
 
-                <div className="pt-2 flex items-center justify-between border-t border-slate-200">
-                  <div className={`flex items-center space-x-1.5 text-xs font-bold ${isEligible ? 'text-emerald-700' : 'text-rose-600'}`}>
-                    {isEligible ? (
-                      <>
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>All Regulatory Thresholds Met</span>
-                      </>
-                    ) : (
-                      <>
-                        <AlertCircle className="w-4 h-4" />
-                        <span>Ineligible (Pending Manager Approval or Thresholds)</span>
-                      </>
-                    )}
-                  </div>
+                <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between border-t border-slate-200 gap-4">
+                  {application ? (
+                    <div className="flex-1 w-full flex items-center justify-between">
+                      <div className={`flex items-center space-x-1.5 text-xs font-bold ${application.status === 'REJECTED' ? 'text-rose-600' : 'text-amber-600'}`}>
+                        {application.status === 'REJECTED' ? (
+                          <>
+                            <AlertCircle className="w-4 h-4" />
+                            <span>Application Rejected: {application.decisionReason || 'Contact support'}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Clock className="w-4 h-4" />
+                            <span>Application Under Review by Government Admin</span>
+                          </>
+                        )}
+                      </div>
+                      
+                      {application.status === 'REJECTED' && (
+                        <button
+                          onClick={() => handleApply(en.id)}
+                          disabled={applying || !isEligible}
+                          className="px-4 py-2 bg-brand-900 hover:bg-brand-800 text-white text-xs font-bold rounded-xl shadow-md transition disabled:opacity-50 ml-auto"
+                        >
+                          {applying ? 'Submitting...' : 'Re-Apply'}
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      <div className={`flex items-center space-x-1.5 text-xs font-bold ${isEligible ? 'text-emerald-700' : 'text-rose-600'}`}>
+                        {isEligible ? (
+                          <>
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>All Regulatory Thresholds Met</span>
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle className="w-4 h-4" />
+                            <span>Ineligible (Pending Manager Approval or Thresholds)</span>
+                          </>
+                        )}
+                      </div>
 
-                  <button
-                    onClick={() => handleApply(en.id)}
-                    disabled={applying || !isEligible}
-                    className="px-4 py-2 bg-brand-900 hover:bg-brand-800 text-white text-xs font-bold rounded-xl shadow-md transition disabled:opacity-50"
-                  >
-                    {applying ? 'Submitting...' : 'Apply for Official Certificate'}
-                  </button>
+                      <button
+                        onClick={() => handleApply(en.id)}
+                        disabled={applying || !isEligible}
+                        className="px-4 py-2 bg-brand-900 hover:bg-brand-800 text-white text-xs font-bold rounded-xl shadow-md transition disabled:opacity-50"
+                      >
+                        {applying ? 'Submitting...' : 'Apply for Official Certificate'}
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             );

@@ -178,6 +178,60 @@ export const getIssuedCertificates = async (req: AuthRequest, res: Response) => 
   }
 };
 
+export const getMyCertificates = async (req: AuthRequest, res: Response) => {
+  try {
+    const user = req.user;
+    if (!user || user.role !== 'TRAINEE' || !user.traineeId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const certificates = await prisma.certificate.findMany({
+      where: { traineeId: user.traineeId },
+      include: {
+        trainee: true,
+        course: {
+          include: { program: true }
+        },
+        enrollment: {
+          include: {
+            batch: { include: { provider: true } }
+          }
+        }
+      },
+      orderBy: { issueDate: 'desc' }
+    });
+    res.json({ certificates });
+  } catch (error) {
+    console.error('getMyCertificates Error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const getMyApplications = async (req: AuthRequest, res: Response) => {
+  try {
+    const user = req.user;
+    if (!user || user.role !== 'TRAINEE' || !user.traineeId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const applications = await prisma.certificateApplication.findMany({
+      where: { traineeId: user.traineeId },
+      include: {
+        enrollment: {
+          include: {
+            batch: { include: { course: true } }
+          }
+        }
+      },
+      orderBy: { appliedDate: 'desc' }
+    });
+    res.json({ applications });
+  } catch (error) {
+    console.error('getMyApplications Error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 export const approveCertificate = async (req: AuthRequest, res: Response) => {
   try {
     const { applicationId, action, reason } = req.body; // action: 'APPROVE' | 'REJECT'
