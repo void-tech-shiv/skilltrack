@@ -2,83 +2,95 @@ import { Request, Response } from 'express';
 import { prisma } from '../server';
 import { AuthRequest } from '../middleware/auth';
 
+export const calculateEligibility = async (enrollmentId: string) => {
+  const enrollment = await prisma.enrollment.findUnique({
+    where: { id: enrollmentId },
+    include: {
+      trainee: true,
+      batch: {
+        include: {
+          course: { include: { modules: true } }
+        }
+      },
+      moduleProgress: true,
+      evidenceSubmissions: true
+    }
+  });
+
+  if (!enrollment) return null;
+
+  const course = enrollment.batch.course;
+
+  // 1. Calculate Attendance Percentage
+  const totalSessions = await prisma.session.count({ where: { batchId: enrollment.batchId } });
+  const attendedSessions = await prisma.attendance.count({
+    where: {
+      session: { batchId: enrollment.batchId },
+      traineeId: enrollment.traineeId,
+      status: { in: ['PRESENT', 'LATE'] }
+    }
+  });
+
+  const attendancePercent = totalSessions > 0 ? (attendedSessions / totalSessions) * 100 : 100;
+  const attendanceEligible = attendancePercent >= course.attendanceRequirement;
+
+  // 2. Calculate Module Completion Percentage
+  const totalModules = course.modules.length;
+  const completedModules = await prisma.moduleProgress.count({
+    where: {
+      enrollmentId: enrollment.id,
+      status: 'VERIFIED'
+    }
+  });
+
+  const modulePercent = totalModules > 0 ? (completedModules / totalModules) * 100 : 100;
+  const moduleEligible = modulePercent >= course.moduleRequirement;
+
+  // 3. Evidence Requirement
+  const evidenceRequired = course.evidenceRequired;
+  const verifiedEvidenceCount = await prisma.evidenceSubmission.count({
+    where: {
+      enrollmentId: enrollment.id,
+      status: 'VERIFIED'
+    }
+  });
+  const evidenceEligible = !evidenceRequired || verifiedEvidenceCount > 0;
+
+  const isEligible = attendanceEligible && moduleEligible && evidenceEligible && enrollment.status === 'COMPLETED';
+
+  return {
+    enrollment,
+    course,
+    isEligible,
+    criteria: {
+      attendancePercent: parseFloat(attendancePercent.toFixed(1)),
+      attendanceRequired: course.attendanceRequirement,
+      attendanceEligible,
+      modulePercent: parseFloat(modulePercent.toFixed(1)),
+      moduleRequired: course.moduleRequirement,
+      moduleEligible,
+      evidenceRequired,
+      verifiedEvidenceCount,
+      evidenceEligible,
+      isCourseCompleted: enrollment.status === 'COMPLETED'
+    }
+  };
+};
+
 export const checkEligibility = async (req: AuthRequest, res: Response) => {
   try {
     const enrollmentId = req.params.enrollmentId as string;
     if (!enrollmentId) return res.status(400).json({ error: 'Enrollment ID is required' });
 
-    const enrollment = await prisma.enrollment.findUnique({
-      where: { id: enrollmentId },
-      include: {
-        trainee: true,
-        batch: {
-          include: {
-            course: { include: { modules: true } }
-          }
-        },
-        moduleProgress: true,
-        evidenceSubmissions: true
-      }
-    });
-
-    if (!enrollment) return res.status(404).json({ error: 'Enrollment not found' });
-
-    const course = enrollment.batch.course;
-
-    // 1. Calculate Attendance Percentage
-    const totalSessions = await prisma.session.count({ where: { batchId: enrollment.batchId } });
-    const attendedSessions = await prisma.attendance.count({
-      where: {
-        session: { batchId: enrollment.batchId },
-        traineeId: enrollment.traineeId,
-        status: { in: ['PRESENT', 'LATE'] }
-      }
-    });
-
-    const attendancePercent = totalSessions > 0 ? (attendedSessions / totalSessions) * 100 : 100;
-    const attendanceEligible = attendancePercent >= course.attendanceRequirement;
-
-    // 2. Calculate Module Completion Percentage
-    const totalModules = course.modules.length;
-    const completedModules = await prisma.moduleProgress.count({
-      where: {
-        enrollmentId: enrollment.id,
-        status: 'VERIFIED'
-      }
-    });
-
-    const modulePercent = totalModules > 0 ? (completedModules / totalModules) * 100 : 100;
-    const moduleEligible = modulePercent >= course.moduleRequirement;
-
-    // 3. Evidence Requirement
-    const evidenceRequired = course.evidenceRequired;
-    const verifiedEvidenceCount = await prisma.evidenceSubmission.count({
-      where: {
-        enrollmentId: enrollment.id,
-        status: 'VERIFIED'
-      }
-    });
-    const evidenceEligible = !evidenceRequired || verifiedEvidenceCount > 0;
-
-    const isEligible = attendanceEligible && moduleEligible && evidenceEligible && enrollment.status === 'COMPLETED';
+    const eligibility = await calculateEligibility(enrollmentId);
+    if (!eligibility) return res.status(404).json({ error: 'Enrollment not found' });
 
     res.json({
       enrollmentId,
-      courseName: course.name,
-      courseCode: course.code,
-      isEligible,
-      criteria: {
-        attendancePercent: parseFloat(attendancePercent.toFixed(1)),
-        attendanceRequired: course.attendanceRequirement,
-        attendanceEligible,
-        modulePercent: parseFloat(modulePercent.toFixed(1)),
-        moduleRequired: course.moduleRequirement,
-        moduleEligible,
-        evidenceRequired,
-        verifiedEvidenceCount,
-        evidenceEligible,
-        isCourseCompleted: enrollment.status === 'COMPLETED'
-      }
+      courseName: eligibility.course.name,
+      courseCode: eligibility.course.code,
+      isEligible: eligibility.isEligible,
+      criteria: eligibility.criteria
     });
   } catch (error) {
     console.error('checkEligibility Error:', error);
@@ -91,12 +103,12 @@ export const applyForCertificate = async (req: AuthRequest, res: Response) => {
     const { enrollmentId } = req.body;
     if (!enrollmentId) return res.status(400).json({ error: 'Enrollment ID is required' });
 
-    const enrollment = await prisma.enrollment.findUnique({
-      where: { id: enrollmentId },
-      include: { batch: { include: { course: true } } }
-    });
+    const eligibility = await calculateEligibility(enrollmentId);
+    if (!eligibility) return res.status(404).json({ error: 'Enrollment not found' });
 
-    if (!enrollment) return res.status(404).json({ error: 'Enrollment not found' });
+    if (!eligibility.isEligible) {
+      return res.status(403).json({ error: 'Enrollment is not eligible for a certificate. Please ensure all completion criteria are met and approved by the Course Manager.' });
+    }
 
     // Check existing application
     const existing = await prisma.certificateApplication.findFirst({
@@ -110,11 +122,11 @@ export const applyForCertificate = async (req: AuthRequest, res: Response) => {
     const app = await prisma.certificateApplication.create({
       data: {
         enrollmentId,
-        traineeId: enrollment.traineeId,
+        traineeId: eligibility.enrollment.traineeId,
         status: 'PENDING',
-        attendancePercent: 90.0,
-        modulePercent: 100.0,
-        evidenceVerified: true
+        attendancePercent: eligibility.criteria.attendancePercent,
+        modulePercent: eligibility.criteria.modulePercent,
+        evidenceVerified: eligibility.criteria.evidenceEligible
       },
       include: {
         trainee: true,

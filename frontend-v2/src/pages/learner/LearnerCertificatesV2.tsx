@@ -9,6 +9,7 @@ import { Certificate, Enrollment } from '../../types';
 export const LearnerCertificatesV2: React.FC = () => {
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [eligibilities, setEligibilities] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(false);
   const [applying, setApplying] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
@@ -29,8 +30,25 @@ export const LearnerCertificatesV2: React.FC = () => {
         api.get('/enrollments').catch(() => ({ enrollments: [] })),
       ]);
 
+      const enrollmentsList = eRes.enrollments || [];
+      const eligData: Record<string, any> = {};
+
+      // Fetch eligibility dynamically for each enrollment
+      await Promise.all(
+        enrollmentsList.map(async (en: any) => {
+          const res = await api.get(`/certificates/eligibility/${en.id}`).catch(() => null);
+          if (res) {
+            eligData[en.id] = {
+              isEligible: res.isEligible,
+              criteria: res.criteria,
+            };
+          }
+        })
+      );
+
       setCertificates(cRes.certificates || []);
-      setEnrollments(eRes.enrollments || []);
+      setEnrollments(enrollmentsList);
+      setEligibilities(eligData);
     } catch (err) {
       console.error('Error fetching certificates:', err);
     } finally {
@@ -121,6 +139,9 @@ export const LearnerCertificatesV2: React.FC = () => {
             const hasCert = certificates.some((c) => c.enrollmentId === en.id);
             if (hasCert) return null;
 
+            const eligibility = eligibilities[en.id];
+            const isEligible = eligibility?.isEligible && en.status === 'COMPLETED';
+
             return (
               <div key={en.id} className="p-5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -133,32 +154,51 @@ export const LearnerCertificatesV2: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                  <div className="p-3 bg-white rounded-xl border border-slate-200">
-                    <span className="text-slate-400 font-bold uppercase text-[10px]">Attendance</span>
-                    <p className="font-bold text-emerald-700 mt-0.5">✓ 91.4% (Threshold 80%)</p>
-                  </div>
+                {eligibility ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                    <div className="p-3 bg-white rounded-xl border border-slate-200">
+                      <span className="text-slate-400 font-bold uppercase text-[10px]">Attendance</span>
+                      <p className={`font-bold mt-0.5 ${eligibility.criteria.attendanceEligible ? 'text-emerald-700' : 'text-rose-600'}`}>
+                        {eligibility.criteria.attendanceEligible ? '✓' : '✕'} {eligibility.criteria.attendancePercent}% (Threshold {eligibility.criteria.attendanceRequired}%)
+                      </p>
+                    </div>
 
-                  <div className="p-3 bg-white rounded-xl border border-slate-200">
-                    <span className="text-slate-400 font-bold uppercase text-[10px]">Curriculum Units</span>
-                    <p className="font-bold text-emerald-700 mt-0.5">✓ 100% Completed</p>
-                  </div>
+                    <div className="p-3 bg-white rounded-xl border border-slate-200">
+                      <span className="text-slate-400 font-bold uppercase text-[10px]">Curriculum Units</span>
+                      <p className={`font-bold mt-0.5 ${eligibility.criteria.moduleEligible ? 'text-emerald-700' : 'text-rose-600'}`}>
+                        {eligibility.criteria.moduleEligible ? '✓' : '✕'} {eligibility.criteria.modulePercent}% Completed
+                      </p>
+                    </div>
 
-                  <div className="p-3 bg-white rounded-xl border border-slate-200">
-                    <span className="text-slate-400 font-bold uppercase text-[10px]">Practical Evidence</span>
-                    <p className="font-bold text-emerald-700 mt-0.5">✓ Lab Proofs Verified</p>
+                    <div className="p-3 bg-white rounded-xl border border-slate-200">
+                      <span className="text-slate-400 font-bold uppercase text-[10px]">Practical Evidence</span>
+                      <p className={`font-bold mt-0.5 ${eligibility.criteria.evidenceEligible ? 'text-emerald-700' : 'text-rose-600'}`}>
+                        {eligibility.criteria.evidenceEligible ? '✓ Lab Proofs Verified' : '✕ Lab Proofs Missing'}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="text-xs text-slate-400 italic py-2">Loading eligibility metrics...</div>
+                )}
 
                 <div className="pt-2 flex items-center justify-between border-t border-slate-200">
-                  <div className="flex items-center space-x-1.5 text-xs text-emerald-700 font-bold">
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>All Regulatory Thresholds Met</span>
+                  <div className={`flex items-center space-x-1.5 text-xs font-bold ${isEligible ? 'text-emerald-700' : 'text-rose-600'}`}>
+                    {isEligible ? (
+                      <>
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>All Regulatory Thresholds Met</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="w-4 h-4" />
+                        <span>Ineligible (Pending Manager Approval or Thresholds)</span>
+                      </>
+                    )}
                   </div>
 
                   <button
                     onClick={() => handleApply(en.id)}
-                    disabled={applying}
+                    disabled={applying || !isEligible}
                     className="px-4 py-2 bg-brand-900 hover:bg-brand-800 text-white text-xs font-bold rounded-xl shadow-md transition disabled:opacity-50"
                   >
                     {applying ? 'Submitting...' : 'Apply for Official Certificate'}

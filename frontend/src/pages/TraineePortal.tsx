@@ -544,9 +544,14 @@ export const TraineePortal: React.FC = () => {
                       <span className="font-bold">Overall Eligibility:</span>
                       <button
                         onClick={() => handleApplyCertificate(currentEnrollment.id)}
-                        className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded"
+                        disabled={!eligibilityData.isEligible}
+                        className={`px-3 py-1 font-bold rounded ${
+                          eligibilityData.isEligible
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                            : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                        }`}
                       >
-                        Apply for Official Certificate
+                        {eligibilityData.isEligible ? 'Apply for Official Certificate' : 'Ineligible (Pending Manager Approval or Thresholds)'}
                       </button>
                     </div>
                   </div>
