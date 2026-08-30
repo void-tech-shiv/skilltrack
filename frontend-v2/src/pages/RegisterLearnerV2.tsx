@@ -404,6 +404,7 @@ export const RegisterLearnerV2: React.FC = () => {
                         type="text"
                         inputMode="numeric"
                         maxLength={12}
+                        pattern="\d{12}"
                         required
                         value={aadhaarNumber}
                         onChange={(e) => setAadhaarNumber(e.target.value.replace(/\D/g, ''))}
@@ -431,6 +432,7 @@ export const RegisterLearnerV2: React.FC = () => {
                         type="text"
                         inputMode="numeric"
                         maxLength={12}
+                        pattern="\d{12}"
                         required
                         value={apaarAbcId}
                         onChange={(e) => setApaarAbcId(e.target.value.replace(/\D/g, ''))}

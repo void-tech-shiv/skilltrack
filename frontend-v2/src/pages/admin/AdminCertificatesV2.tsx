@@ -45,8 +45,8 @@ export const AdminCertificatesV2: React.FC = () => {
     try {
       setLoading(true);
       const [appsRes, certsRes] = await Promise.all([
-        api.get('/certificates/applications/all').catch(() => ({ applications: [] })),
-        api.get('/certificates/issued/all').catch(() => ({ certificates: [] })),
+        api.get('/certificates/applications').catch(() => ({ applications: [] })),
+        api.get('/certificates/issued').catch(() => ({ certificates: [] })),
       ]);
 
       setApplications(appsRes.applications || []);
@@ -64,7 +64,7 @@ export const AdminCertificatesV2: React.FC = () => {
 
   const handleApproveApplication = async (appId: string) => {
     try {
-      const res = await api.post(`/certificates/applications/${appId}/approve`);
+      const res = await api.post(`/certificates/approve`, { applicationId: appId, action: 'APPROVE' });
       setSuccess(`Application approved! Issued Certificate ID: ${res.certificate?.certificateNumber || 'CERT-MH-SUCCESS'}`);
       fetchData();
     } catch (err: any) {

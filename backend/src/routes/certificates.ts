@@ -5,7 +5,8 @@ import {
   getCertificateApplications,
   approveCertificate,
   revokeCertificate,
-  verifyCertificatePublic
+  verifyCertificatePublic,
+  getIssuedCertificates
 } from '../controllers/certificates.controller';
 import { authenticate, authorize } from '../middleware/auth';
 
@@ -19,6 +20,7 @@ router.post('/verify', verifyCertificatePublic);
 router.get('/eligibility/:enrollmentId', authenticate, checkEligibility);
 router.post('/apply', authenticate, authorize(['TRAINEE']), applyForCertificate);
 router.get('/applications', authenticate, authorize(['GOVERNMENT_ADMIN', 'COURSE_MANAGER']), getCertificateApplications);
+router.get('/issued', authenticate, authorize(['GOVERNMENT_ADMIN', 'COURSE_MANAGER', 'TRAINING_PROVIDER']), getIssuedCertificates);
 router.post('/approve', authenticate, authorize(['GOVERNMENT_ADMIN']), approveCertificate);
 router.post('/revoke', authenticate, authorize(['GOVERNMENT_ADMIN']), revokeCertificate);
 

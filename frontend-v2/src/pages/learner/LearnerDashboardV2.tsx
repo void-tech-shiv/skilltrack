@@ -38,7 +38,7 @@ export const LearnerDashboardV2: React.FC = () => {
         setLoading(true);
         const [pRes, eRes, cRes, rRes] = await Promise.all([
           api.get('/trainees/me').catch(() => ({ profile: null })),
-          api.get('/trainees/me/enrollments').catch(() => ({ enrollments: [] })),
+          api.get('/enrollments').catch(() => ({ enrollments: [] })),
           api.get('/certificates/my').catch(() => ({ certificates: [] })),
           api.get('/courses/recommendations').catch(() => ({ recommendations: [] })),
         ]);

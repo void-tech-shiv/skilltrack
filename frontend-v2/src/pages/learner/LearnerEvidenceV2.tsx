@@ -28,7 +28,7 @@ export const LearnerEvidenceV2: React.FC = () => {
       setLoading(true);
       const [eRes, enRes] = await Promise.all([
         api.get('/trainees/me/evidence').catch(() => ({ submissions: [] })),
-        api.get('/trainees/me/enrollments').catch(() => ({ enrollments: [] })),
+        api.get('/enrollments').catch(() => ({ enrollments: [] })),
       ]);
 
       setEvidenceList(eRes.submissions || []);

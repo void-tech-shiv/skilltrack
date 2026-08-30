@@ -141,11 +141,19 @@ export const getTraineeById = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'Trainee ID is required' });
     }
     
-    let whereClause: any = { id };
+    let targetId = id;
+    if (id === 'me') {
+      if (user.role !== 'TRAINEE' || !user.traineeId) {
+        return res.status(403).json({ error: 'Forbidden: Only trainees can use the "me" identifier' });
+      }
+      targetId = user.traineeId;
+    }
+    
+    let whereClause: any = { id: targetId };
     
     if (user.role === 'TRAINING_PROVIDER') {
       whereClause = {
-        id,
+        id: targetId,
         enrollments: {
           some: {
             batch: { providerId: user.organizationId }
@@ -154,7 +162,7 @@ export const getTraineeById = async (req: AuthRequest, res: Response) => {
       };
     } else if (user.role === 'TRAINER') {
       whereClause = {
-        id,
+        id: targetId,
         enrollments: {
           some: {
             batch: { trainerId: user.trainerId }
@@ -162,7 +170,7 @@ export const getTraineeById = async (req: AuthRequest, res: Response) => {
         }
       };
     } else if (user.role === 'TRAINEE') {
-      if (user.traineeId !== id) {
+      if (user.traineeId !== targetId) {
         return res.status(403).json({ error: 'Forbidden: Cannot access other trainee records' });
       }
       whereClause = { id: user.traineeId };

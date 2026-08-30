@@ -39,7 +39,7 @@ export const LearnerSkillsV2: React.FC = () => {
       const [cRes, bRes, eRes] = await Promise.all([
         api.get('/courses').catch(() => ({ courses: [] })),
         api.get('/batches').catch(() => ({ batches: [] })),
-        api.get('/trainees/me/enrollments').catch(() => ({ enrollments: [] })),
+        api.get('/enrollments').catch(() => ({ enrollments: [] })),
       ]);
 
       setCourses(cRes.courses || (Array.isArray(cRes) ? cRes : []));

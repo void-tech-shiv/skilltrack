@@ -14,7 +14,7 @@ export const LearnerTrainingV2: React.FC = () => {
     const fetchEnrollments = async () => {
       try {
         setLoading(true);
-        const res = await api.get('/trainees/me/enrollments');
+        const res = await api.get('/enrollments');
         setEnrollments(res.enrollments || []);
       } catch (err) {
         console.error('Error fetching learner training:', err);

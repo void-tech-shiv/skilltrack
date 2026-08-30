@@ -150,6 +150,22 @@ export const getCertificateApplications = async (req: AuthRequest, res: Response
   }
 };
 
+export const getIssuedCertificates = async (req: AuthRequest, res: Response) => {
+  try {
+    const certificates = await prisma.certificate.findMany({
+      include: {
+        trainee: true,
+        course: true,
+      },
+      orderBy: { issueDate: 'desc' }
+    });
+    res.json({ certificates });
+  } catch (error) {
+    console.error('getIssuedCertificates Error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 export const approveCertificate = async (req: AuthRequest, res: Response) => {
   try {
     const { applicationId, action, reason } = req.body; // action: 'APPROVE' | 'REJECT'

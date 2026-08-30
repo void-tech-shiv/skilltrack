@@ -26,7 +26,7 @@ export const LearnerCertificatesV2: React.FC = () => {
       setLoading(true);
       const [cRes, eRes] = await Promise.all([
         api.get('/certificates/my').catch(() => ({ certificates: [] })),
-        api.get('/trainees/me/enrollments').catch(() => ({ enrollments: [] })),
+        api.get('/enrollments').catch(() => ({ enrollments: [] })),
       ]);
 
       setCertificates(cRes.certificates || []);
