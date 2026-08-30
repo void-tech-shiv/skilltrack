@@ -31,7 +31,7 @@ async function main() {
   await prisma.trainee.deleteMany();
   await prisma.organization.deleteMany();
 
-  const passwordHash = await bcrypt.hash('password123', 10);
+  const passwordHash = await bcrypt.hash('PS135', 10);
 
   // 1. Create Organizations
   const govOrg = await prisma.organization.create({
@@ -58,7 +58,7 @@ async function main() {
   const trainer1 = await prisma.trainer.create({
     data: {
       name: 'Rajesh Sharma',
-      email: 'trainer@maha.gov.in',
+      email: 'trainer@gmail.com',
       phone: '9820011223',
       organizationId: provider1.id,
       status: 'APPROVED',
@@ -69,7 +69,7 @@ async function main() {
   const trainer2 = await prisma.trainer.create({
     data: {
       name: 'Amit Deshmukh',
-      email: 'amit.trainer@maha.gov.in',
+      email: 'teacher@gmail.com',
       phone: '9830022334',
       organizationId: provider2.id,
       status: 'APPROVED',
@@ -77,84 +77,38 @@ async function main() {
     }
   });
 
-  // 3. Create Users for all 7 roles
-  // Role 1: GOVERNMENT_ADMIN
-  await prisma.user.create({
-    data: {
-      email: 'admin@maha.gov.in',
-      passwordHash,
-      role: 'GOVERNMENT_ADMIN',
-      status: 'ACTIVE',
-      organizationId: govOrg.id
-    }
-  });
+  // 3. Create Users for all roles with @gmail.com and password PS135
+  const userSeeds = [
+    { email: 'admin@gmail.com', role: 'GOVERNMENT_ADMIN', orgId: govOrg.id, trainerId: null },
+    { email: 'coursemanager@gmail.com', role: 'COURSE_MANAGER', orgId: govOrg.id, trainerId: null },
+    { email: 'courcemanager@gmail.com', role: 'COURSE_MANAGER', orgId: govOrg.id, trainerId: null },
+    { email: 'provider@gmail.com', role: 'TRAINING_PROVIDER', orgId: provider1.id, trainerId: null },
+    { email: 'trainer@gmail.com', role: 'TRAINER', orgId: provider1.id, trainerId: trainer1.id },
+    { email: 'teacher@gmail.com', role: 'TRAINER', orgId: provider2.id, trainerId: trainer2.id },
+    { email: 'analyst@gmail.com', role: 'ANALYST', orgId: govOrg.id, trainerId: null },
+    { email: 'employer@gmail.com', role: 'EMPLOYER', orgId: employer1.id, trainerId: null },
 
-  // Role 2: ANALYST
-  await prisma.user.create({
-    data: {
-      email: 'analyst@maha.gov.in',
-      passwordHash,
-      role: 'ANALYST',
-      status: 'ACTIVE',
-      organizationId: govOrg.id
-    }
-  });
+    // Legacy @maha.gov.in accounts also synced with PS135
+    { email: 'admin@maha.gov.in', role: 'GOVERNMENT_ADMIN', orgId: govOrg.id, trainerId: null },
+    { email: 'coursemanager@maha.gov.in', role: 'COURSE_MANAGER', orgId: govOrg.id, trainerId: null },
+    { email: 'provider@maha.gov.in', role: 'TRAINING_PROVIDER', orgId: provider1.id, trainerId: null },
+    { email: 'analyst@maha.gov.in', role: 'ANALYST', orgId: govOrg.id, trainerId: null },
+    { email: 'employer@maha.gov.in', role: 'EMPLOYER', orgId: employer1.id, trainerId: null },
+    { email: 'pending.employer@maha.gov.in', role: 'EMPLOYER', orgId: employer2.id, trainerId: null, status: 'PENDING' }
+  ];
 
-  // Role 3: COURSE_MANAGER
-  await prisma.user.create({
-    data: {
-      email: 'coursemanager@maha.gov.in',
-      passwordHash,
-      role: 'COURSE_MANAGER',
-      status: 'ACTIVE',
-      organizationId: govOrg.id
-    }
-  });
-
-  // Role 4: TRAINING_PROVIDER
-  await prisma.user.create({
-    data: {
-      email: 'provider@maha.gov.in',
-      passwordHash,
-      role: 'TRAINING_PROVIDER',
-      status: 'ACTIVE',
-      organizationId: provider1.id
-    }
-  });
-
-  // Role 5: TRAINER
-  await prisma.user.create({
-    data: {
-      email: 'trainer@maha.gov.in',
-      passwordHash,
-      role: 'TRAINER',
-      status: 'ACTIVE',
-      organizationId: provider1.id,
-      trainerId: trainer1.id
-    }
-  });
-
-  // Role 6: EMPLOYER
-  await prisma.user.create({
-    data: {
-      email: 'employer@maha.gov.in',
-      passwordHash,
-      role: 'EMPLOYER',
-      status: 'ACTIVE',
-      organizationId: employer1.id
-    }
-  });
-
-  // Pending self-registered users for approval workflow testing
-  await prisma.user.create({
-    data: {
-      email: 'pending.employer@maha.gov.in',
-      passwordHash,
-      role: 'EMPLOYER',
-      status: 'PENDING',
-      organizationId: employer2.id
-    }
-  });
+  for (const u of userSeeds) {
+    await prisma.user.create({
+      data: {
+        email: u.email,
+        passwordHash,
+        role: u.role as any,
+        status: (u as any).status || 'ACTIVE',
+        organizationId: u.orgId,
+        trainerId: u.trainerId
+      }
+    });
+  }
 
   // 4. Create Programs, Courses & Modules
   const prog1 = await prisma.program.create({
