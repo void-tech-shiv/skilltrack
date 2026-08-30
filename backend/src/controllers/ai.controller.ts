@@ -39,7 +39,8 @@ export const getRiskPrediction = async (req: Request, res: Response): Promise<vo
     };
 
     // Call Real Python ML Service
-    const mlResponse = await fetch('http://localhost:8000/predict', {
+    const mlBaseUrl = (process.env.ML_SERVICE_URL || 'http://localhost:8000').replace(/\/$/, '');
+    const mlResponse = await fetch(`${mlBaseUrl}/predict`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(features)

@@ -1,19 +1,39 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+import os
 import pickle
 import pandas as pd
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
-app = FastAPI(title="Trainee Risk ML Service")
+app = FastAPI(title="Trainee Risk ML Service", version="1.0.0")
 
-# Load model and encoders at startup
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Load model and encoders relative to this script directory
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_DIR = os.path.join(BASE_DIR, 'model')
+
+model = None
+le_gender = None
+le_edu = None
+
 try:
-    with open('model/rf_model.pkl', 'rb') as f:
+    with open(os.path.join(MODEL_DIR, 'rf_model.pkl'), 'rb') as f:
         model = pickle.load(f)
-    with open('model/le_gender.pkl', 'rb') as f:
+    with open(os.path.join(MODEL_DIR, 'le_gender.pkl'), 'rb') as f:
         le_gender = pickle.load(f)
-    with open('model/le_edu.pkl', 'rb') as f:
+    with open(os.path.join(MODEL_DIR, 'le_edu.pkl'), 'rb') as f:
         le_edu = pickle.load(f)
-except FileNotFoundError:
+    print("[ML Service] Trained Random Forest models and encoders loaded successfully.")
+except Exception as e:
+    print(f"[ML Service] Warning: Model loading failed: {e}")
     model = None
 
 class TraineeFeatures(BaseModel):
@@ -24,27 +44,34 @@ class TraineeFeatures(BaseModel):
     attendance_rate: float
     distance_to_center_km: float
 
+@app.get("/")
+def root():
+    return {
+        "service": "MahaSkills AI Trainee Risk Prediction Service",
+        "status": "online",
+        "model_loaded": model is not None
+    }
+
 @app.get("/health")
 def health():
     if model is None:
         return {"status": "degraded", "message": "Model not loaded"}
-    return {"status": "ok"}
+    return {"status": "ok", "service": "trainee-risk-ml"}
 
 @app.post("/predict")
 def predict_risk(features: TraineeFeatures):
     if model is None:
-        raise HTTPException(status_code=503, detail="Model is not loaded")
+        raise HTTPException(status_code=503, detail="ML Model is not currently loaded on the server")
     
     try:
-        # Preprocess
         gender_enc = le_gender.transform([features.gender])[0]
-    except ValueError:
-        gender_enc = 0 # default fallback
+    except Exception:
+        gender_enc = 0  # default fallback
         
     try:
         edu_enc = le_edu.transform([features.education_level])[0]
-    except ValueError:
-        edu_enc = 0 # default fallback
+    except Exception:
+        edu_enc = 0  # default fallback
 
     # Create DataFrame
     df = pd.DataFrame([{
@@ -56,8 +83,8 @@ def predict_risk(features: TraineeFeatures):
         'distance_to_center_km': features.distance_to_center_km
     }])
 
-    # Predict probability of dropout
-    dropout_prob = model.predict_proba(df)[0][1] # Probability of class 1 (dropout)
+    # Predict probability of dropout (class 1)
+    dropout_prob = float(model.predict_proba(df)[0][1])
 
     return {
         "risk_score": float(dropout_prob * 100),
