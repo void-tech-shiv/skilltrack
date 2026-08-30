@@ -3,6 +3,7 @@ import { BookOpen, Award, CheckCircle2, Clock, Users, Plus } from 'lucide-react'
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { api } from '../../lib/api';
+import { parseSkills } from '../../lib/utils';
 import { Course } from '../../types';
 
 export const AdminCoursesV2: React.FC = () => {
@@ -70,7 +71,7 @@ export const AdminCoursesV2: React.FC = () => {
       header: 'Mapped Skills',
       render: (item) => (
         <div className="flex flex-wrap gap-1 max-w-xs">
-          {item.skills?.map((s, idx) => (
+          {parseSkills(item.skills).map((s, idx) => (
             <span key={idx} className="px-2 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-bold rounded-md">
               {s}
             </span>

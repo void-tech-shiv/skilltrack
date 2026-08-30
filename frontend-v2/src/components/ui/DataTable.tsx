@@ -48,12 +48,15 @@ export function DataTable<T extends Record<string, any>>({
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
+  const safeData = useMemo(() => (Array.isArray(data) ? data : []), [data]);
+
   // Filter by search
   const filteredData = useMemo(() => {
-    if (!searchTerm.trim()) return data;
+    if (!searchTerm.trim()) return safeData;
     const term = searchTerm.toLowerCase();
 
-    return data.filter((item) => {
+    return safeData.filter((item) => {
+      if (!item) return false;
       if (typeof searchKey === 'function') {
         return searchKey(item).toLowerCase().includes(term);
       }
@@ -61,12 +64,15 @@ export function DataTable<T extends Record<string, any>>({
         const val = item[searchKey as string];
         return val ? String(val).toLowerCase().includes(term) : false;
       }
-      // Fallback: search across all string values
-      return Object.values(item).some((v) =>
-        v ? String(v).toLowerCase().includes(term) : false
-      );
+      // Fallback: search across primitive values
+      return Object.values(item).some((v) => {
+        if (typeof v === 'string' || typeof v === 'number') {
+          return String(v).toLowerCase().includes(term);
+        }
+        return false;
+      });
     });
-  }, [data, searchTerm, searchKey]);
+  }, [safeData, searchTerm, searchKey]);
 
   // Sort
   const sortedData = useMemo(() => {

@@ -3,6 +3,7 @@ import { Sparkles, BookOpen, Clock, Award, CheckCircle2, ArrowRight, RefreshCw, 
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { Modal } from '../../components/ui/Modal';
 import { api } from '../../lib/api';
+import { parseSkills } from '../../lib/utils';
 import { Course, Batch } from '../../types';
 
 export const LearnerSkillsV2: React.FC = () => {
@@ -121,7 +122,7 @@ export const LearnerSkillsV2: React.FC = () => {
                 <div>
                   <span className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Key Competencies</span>
                   <div className="flex flex-wrap gap-1">
-                    {c.skills?.map((sk, i) => (
+                    {parseSkills(c.skills).map((sk, i) => (
                       <span key={i} className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[10px] font-semibold">
                         {sk}
                       </span>

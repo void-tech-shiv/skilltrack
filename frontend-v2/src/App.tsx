@@ -101,70 +101,74 @@ const Protected: React.FC<{
   return <AppShell>{children}</AppShell>;
 };
 
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
+
 export const App: React.FC = () => {
   return (
-    <Router>
-      <AuthProvider>
-        <Routes>
-          {/* Public Landing, Authentication & Registration Routes */}
-          <Route path="/" element={<LandingPageV2 />} />
-          <Route path="/home" element={<LandingPageV2 />} />
-          <Route path="/login" element={<LoginV2 />} />
-          <Route path="/forgot-password" element={<ForgotPasswordV2 />} />
-          <Route path="/register-learner" element={<RegisterLearnerV2 />} />
-          <Route path="/register-employer" element={<RegisterEmployerV2 />} />
-          <Route path="/verify" element={<PublicVerifyV2 />} />
-          <Route path="/verify/:certNumber" element={<PublicVerifyV2 />} />
+    <ErrorBoundary>
+      <Router>
+        <AuthProvider>
+          <Routes>
+            {/* Public Landing, Authentication & Registration Routes */}
+            <Route path="/" element={<LandingPageV2 />} />
+            <Route path="/home" element={<LandingPageV2 />} />
+            <Route path="/login" element={<LoginV2 />} />
+            <Route path="/forgot-password" element={<ForgotPasswordV2 />} />
+            <Route path="/register-learner" element={<RegisterLearnerV2 />} />
+            <Route path="/register-employer" element={<RegisterEmployerV2 />} />
+            <Route path="/verify" element={<PublicVerifyV2 />} />
+            <Route path="/verify/:certNumber" element={<PublicVerifyV2 />} />
 
-          {/* 1. GOVERNMENT ADMIN V2 ROUTES */}
-          <Route path="/admin" element={<Protected allowedRoles={['GOVERNMENT_ADMIN']}><AdminDashboardV2 /></Protected>} />
-          <Route path="/admin/approvals" element={<Protected allowedRoles={['GOVERNMENT_ADMIN']}><AdminApprovalsV2 /></Protected>} />
-          <Route path="/admin/analytics" element={<Protected allowedRoles={['GOVERNMENT_ADMIN']}><AdminAnalyticsV2 /></Protected>} />
-          <Route path="/admin/courses" element={<Protected allowedRoles={['GOVERNMENT_ADMIN']}><AdminCoursesV2 /></Protected>} />
-          <Route path="/admin/batches" element={<Protected allowedRoles={['GOVERNMENT_ADMIN']}><AdminBatchesV2 /></Protected>} />
-          <Route path="/admin/certificates" element={<Protected allowedRoles={['GOVERNMENT_ADMIN']}><AdminCertificatesV2 /></Protected>} />
-          <Route path="/admin/interventions" element={<Protected allowedRoles={['GOVERNMENT_ADMIN']}><AdminInterventionsV2 /></Protected>} />
-          <Route path="/admin/audit-logs" element={<Protected allowedRoles={['GOVERNMENT_ADMIN']}><AdminAuditLogsV2 /></Protected>} />
+            {/* 1. GOVERNMENT ADMIN V2 ROUTES */}
+            <Route path="/admin" element={<Protected allowedRoles={['GOVERNMENT_ADMIN']}><AdminDashboardV2 /></Protected>} />
+            <Route path="/admin/approvals" element={<Protected allowedRoles={['GOVERNMENT_ADMIN']}><AdminApprovalsV2 /></Protected>} />
+            <Route path="/admin/analytics" element={<Protected allowedRoles={['GOVERNMENT_ADMIN']}><AdminAnalyticsV2 /></Protected>} />
+            <Route path="/admin/courses" element={<Protected allowedRoles={['GOVERNMENT_ADMIN']}><AdminCoursesV2 /></Protected>} />
+            <Route path="/admin/batches" element={<Protected allowedRoles={['GOVERNMENT_ADMIN']}><AdminBatchesV2 /></Protected>} />
+            <Route path="/admin/certificates" element={<Protected allowedRoles={['GOVERNMENT_ADMIN']}><AdminCertificatesV2 /></Protected>} />
+            <Route path="/admin/interventions" element={<Protected allowedRoles={['GOVERNMENT_ADMIN']}><AdminInterventionsV2 /></Protected>} />
+            <Route path="/admin/audit-logs" element={<Protected allowedRoles={['GOVERNMENT_ADMIN']}><AdminAuditLogsV2 /></Protected>} />
 
-          {/* 2. COURSE MANAGER V2 ROUTES */}
-          <Route path="/course-manager" element={<Protected allowedRoles={['COURSE_MANAGER']}><CourseManagerDashboardV2 /></Protected>} />
-          <Route path="/course-manager/curriculum" element={<Protected allowedRoles={['COURSE_MANAGER']}><CourseCurriculumV2 /></Protected>} />
-          <Route path="/course-manager/batches" element={<Protected allowedRoles={['COURSE_MANAGER']}><BatchSchedulerV2 /></Protected>} />
-          <Route path="/course-manager/enrollments" element={<Protected allowedRoles={['COURSE_MANAGER']}><EnrollmentReviewsV2 /></Protected>} />
-          <Route path="/course-manager/completions" element={<Protected allowedRoles={['COURSE_MANAGER']}><CompletionApprovalsV2 /></Protected>} />
+            {/* 2. COURSE MANAGER V2 ROUTES */}
+            <Route path="/course-manager" element={<Protected allowedRoles={['COURSE_MANAGER']}><CourseManagerDashboardV2 /></Protected>} />
+            <Route path="/course-manager/curriculum" element={<Protected allowedRoles={['COURSE_MANAGER']}><CourseCurriculumV2 /></Protected>} />
+            <Route path="/course-manager/batches" element={<Protected allowedRoles={['COURSE_MANAGER']}><BatchSchedulerV2 /></Protected>} />
+            <Route path="/course-manager/enrollments" element={<Protected allowedRoles={['COURSE_MANAGER']}><EnrollmentReviewsV2 /></Protected>} />
+            <Route path="/course-manager/completions" element={<Protected allowedRoles={['COURSE_MANAGER']}><CompletionApprovalsV2 /></Protected>} />
 
-          {/* 3. TRAINING PROVIDER V2 ROUTES (Operational Only) */}
-          <Route path="/provider" element={<Protected allowedRoles={['TRAINING_PROVIDER']}><ProviderDashboardV2 /></Protected>} />
-          <Route path="/provider/batches" element={<Protected allowedRoles={['TRAINING_PROVIDER']}><ProviderBatchesV2 /></Protected>} />
-          <Route path="/provider/teachers" element={<Protected allowedRoles={['TRAINING_PROVIDER']}><ProviderTeachersV2 /></Protected>} />
-          <Route path="/provider/learners" element={<Protected allowedRoles={['TRAINING_PROVIDER']}><ProviderLearnersV2 /></Protected>} />
-          <Route path="/provider/operations" element={<Protected allowedRoles={['TRAINING_PROVIDER']}><ProviderOperationsV2 /></Protected>} />
+            {/* 3. TRAINING PROVIDER V2 ROUTES (Operational Only) */}
+            <Route path="/provider" element={<Protected allowedRoles={['TRAINING_PROVIDER']}><ProviderDashboardV2 /></Protected>} />
+            <Route path="/provider/batches" element={<Protected allowedRoles={['TRAINING_PROVIDER']}><ProviderBatchesV2 /></Protected>} />
+            <Route path="/provider/teachers" element={<Protected allowedRoles={['TRAINING_PROVIDER']}><ProviderTeachersV2 /></Protected>} />
+            <Route path="/provider/learners" element={<Protected allowedRoles={['TRAINING_PROVIDER']}><ProviderLearnersV2 /></Protected>} />
+            <Route path="/provider/operations" element={<Protected allowedRoles={['TRAINING_PROVIDER']}><ProviderOperationsV2 /></Protected>} />
 
-          {/* 4. TEACHER V2 ROUTES */}
-          <Route path="/teacher" element={<Protected allowedRoles={['TRAINER']}><TeacherDashboardV2 /></Protected>} />
-          <Route path="/teacher/sessions" element={<Protected allowedRoles={['TRAINER']}><TeacherSessionsV2 /></Protected>} />
-          <Route path="/teacher/attendance" element={<Protected allowedRoles={['TRAINER']}><TeacherAttendanceV2 /></Protected>} />
-          <Route path="/teacher/evidence" element={<Protected allowedRoles={['TRAINER']}><TeacherEvidenceV2 /></Protected>} />
-          <Route path="/teacher/recommendations" element={<Protected allowedRoles={['TRAINER']}><TeacherRecommendationsV2 /></Protected>} />
+            {/* 4. TEACHER V2 ROUTES */}
+            <Route path="/teacher" element={<Protected allowedRoles={['TRAINER']}><TeacherDashboardV2 /></Protected>} />
+            <Route path="/teacher/sessions" element={<Protected allowedRoles={['TRAINER']}><TeacherSessionsV2 /></Protected>} />
+            <Route path="/teacher/attendance" element={<Protected allowedRoles={['TRAINER']}><TeacherAttendanceV2 /></Protected>} />
+            <Route path="/teacher/evidence" element={<Protected allowedRoles={['TRAINER']}><TeacherEvidenceV2 /></Protected>} />
+            <Route path="/teacher/recommendations" element={<Protected allowedRoles={['TRAINER']}><TeacherRecommendationsV2 /></Protected>} />
 
-          {/* 5. LEARNER V2 ROUTES */}
-          <Route path="/learner" element={<Protected allowedRoles={['TRAINEE']}><LearnerDashboardV2 /></Protected>} />
-          <Route path="/learner/skills" element={<Protected allowedRoles={['TRAINEE']}><LearnerSkillsV2 /></Protected>} />
-          <Route path="/learner/training" element={<Protected allowedRoles={['TRAINEE']}><LearnerTrainingV2 /></Protected>} />
-          <Route path="/learner/evidence" element={<Protected allowedRoles={['TRAINEE']}><LearnerEvidenceV2 /></Protected>} />
-          <Route path="/learner/employment" element={<Protected allowedRoles={['TRAINEE']}><LearnerEmploymentV2 /></Protected>} />
-          <Route path="/learner/certificates" element={<Protected allowedRoles={['TRAINEE']}><LearnerCertificatesV2 /></Protected>} />
-          <Route path="/learner/consent" element={<Protected allowedRoles={['TRAINEE']}><LearnerConsentV2 /></Protected>} />
+            {/* 5. LEARNER V2 ROUTES */}
+            <Route path="/learner" element={<Protected allowedRoles={['TRAINEE']}><LearnerDashboardV2 /></Protected>} />
+            <Route path="/learner/skills" element={<Protected allowedRoles={['TRAINEE']}><LearnerSkillsV2 /></Protected>} />
+            <Route path="/learner/training" element={<Protected allowedRoles={['TRAINEE']}><LearnerTrainingV2 /></Protected>} />
+            <Route path="/learner/evidence" element={<Protected allowedRoles={['TRAINEE']}><LearnerEvidenceV2 /></Protected>} />
+            <Route path="/learner/employment" element={<Protected allowedRoles={['TRAINEE']}><LearnerEmploymentV2 /></Protected>} />
+            <Route path="/learner/certificates" element={<Protected allowedRoles={['TRAINEE']}><LearnerCertificatesV2 /></Protected>} />
+            <Route path="/learner/consent" element={<Protected allowedRoles={['TRAINEE']}><LearnerConsentV2 /></Protected>} />
 
-          {/* 6. EMPLOYER V2 ROUTES */}
-          <Route path="/employer" element={<Protected allowedRoles={['EMPLOYER']}><EmployerDashboardV2 /></Protected>} />
-          <Route path="/employer/verifications" element={<Protected allowedRoles={['EMPLOYER']}><EmployerVerificationsV2 /></Protected>} />
-          <Route path="/employer/roster" element={<Protected allowedRoles={['EMPLOYER']}><EmployerRosterV2 /></Protected>} />
+            {/* 6. EMPLOYER V2 ROUTES */}
+            <Route path="/employer" element={<Protected allowedRoles={['EMPLOYER']}><EmployerDashboardV2 /></Protected>} />
+            <Route path="/employer/verifications" element={<Protected allowedRoles={['EMPLOYER']}><EmployerVerificationsV2 /></Protected>} />
+            <Route path="/employer/roster" element={<Protected allowedRoles={['EMPLOYER']}><EmployerRosterV2 /></Protected>} />
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </AuthProvider>
-    </Router>
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </AuthProvider>
+      </Router>
+    </ErrorBoundary>
   );
 };

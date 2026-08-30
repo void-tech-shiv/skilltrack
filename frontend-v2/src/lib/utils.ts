@@ -20,6 +20,8 @@ export function getRoleDisplayName(role?: UserRole | string): string {
       return 'Learner';
     case 'EMPLOYER':
       return 'Employer';
+    case 'ANALYST':
+      return 'State Analyst';
     default:
       return role || 'Guest';
   }
@@ -39,6 +41,8 @@ export function getRoleBadgeStyle(role?: UserRole | string): { bg: string; text:
       return { bg: 'bg-sky-50', text: 'text-sky-700', border: 'border-sky-200' };
     case 'EMPLOYER':
       return { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' };
+    case 'ANALYST':
+      return { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' };
     default:
       return { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200' };
   }
@@ -89,4 +93,22 @@ export function getInitials(name?: string): string {
   const parts = name.trim().split(/\s+/);
   if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+/**
+ * Safely parses skills whether stored as an Array, JSON string, or comma-separated string
+ */
+export function parseSkills(skills?: string[] | string | null): string[] {
+  if (!skills) return [];
+  if (Array.isArray(skills)) return skills.filter(Boolean);
+  if (typeof skills === 'string') {
+    try {
+      const parsed = JSON.parse(skills);
+      if (Array.isArray(parsed)) return parsed.filter(Boolean);
+    } catch {
+      // not JSON string, proceed with comma-separated splitting
+    }
+    return skills.split(',').map(s => s.trim()).filter(Boolean);
+  }
+  return [];
 }

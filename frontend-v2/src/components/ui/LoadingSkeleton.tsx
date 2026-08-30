@@ -34,3 +34,21 @@ export const DashboardSkeleton: React.FC = () => {
     </div>
   );
 };
+
+export const TableSkeleton: React.FC<{ rows?: number; columns?: number }> = ({
+  rows = 5,
+  columns = 4,
+}) => {
+  return (
+    <div className="space-y-3 animate-pulse">
+      <div className="h-10 bg-slate-100 rounded-xl w-full" />
+      {Array.from({ length: rows }).map((_, r) => (
+        <div key={r} className="flex space-x-3">
+          {Array.from({ length: columns }).map((_, c) => (
+            <div key={c} className="h-12 bg-slate-50 border border-slate-100 rounded-xl flex-1" />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+};
