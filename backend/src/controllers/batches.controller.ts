@@ -192,21 +192,52 @@ export const requestEnrollment = async (req: AuthRequest, res: Response) => {
     const user = req.user;
     const { batchId } = req.body;
 
-    if (!user || !user.traineeId) {
-      return res.status(403).json({ error: 'Only registered trainees can request enrollment' });
+    if (!user) {
+      return res.status(401).json({ error: 'Please sign in to apply for course batches.' });
     }
 
-    if (!batchId) return res.status(400).json({ error: 'Batch ID is required' });
+    if (user.role !== 'TRAINEE' || !user.traineeId) {
+      return res.status(403).json({ error: 'You don\'t have permission to apply for this batch. Only registered learners can enroll.' });
+    }
 
-    // Check existing enrollment
+    if (!batchId) {
+      return res.status(400).json({ error: 'Batch ID is required.' });
+    }
+
+    // 1. Verify batch exists
+    const batch = await prisma.batch.findUnique({
+      where: { id: batchId },
+      include: {
+        course: true,
+        provider: true,
+        _count: { select: { enrollments: true } }
+      }
+    });
+
+    if (!batch) {
+      return res.status(404).json({ error: 'This batch could not be found.' });
+    }
+
+    // 2. Check batch status
+    if (batch.status !== 'ACTIVE') {
+      return res.status(400).json({ error: 'This batch is no longer accepting applications.' });
+    }
+
+    // 3. Check capacity
+    if (batch.capacity && batch._count.enrollments >= batch.capacity) {
+      return res.status(400).json({ error: 'This batch has reached maximum capacity and is no longer accepting new applications.' });
+    }
+
+    // 4. Check duplicate enrollment
     const existing = await prisma.enrollment.findFirst({
       where: { traineeId: user.traineeId, batchId }
     });
 
     if (existing) {
-      return res.status(409).json({ error: 'You have already requested enrollment for this batch' });
+      return res.status(409).json({ error: 'You have already applied for this batch.' });
     }
 
+    // 5. Create enrollment
     const enrollment = await prisma.enrollment.create({
       data: {
         traineeId: user.traineeId,
@@ -218,10 +249,29 @@ export const requestEnrollment = async (req: AuthRequest, res: Response) => {
       }
     });
 
-    res.status(201).json({ message: 'Enrollment request submitted for Course Manager approval', enrollment });
+    // Audit log
+    await prisma.auditLog.create({
+      data: {
+        actorId: user.id,
+        action: 'REQUEST_ENROLLMENT',
+        resource: 'Enrollment',
+        resourceId: enrollment.id,
+        metadata: JSON.stringify({
+          batchId,
+          batchName: batch.name,
+          courseName: batch.course?.name,
+          providerName: batch.provider?.name
+        })
+      }
+    });
+
+    return res.status(201).json({
+      message: 'Enrollment application submitted successfully! Under review by Course Manager.',
+      enrollment
+    });
   } catch (error) {
     console.error('requestEnrollment Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: 'Unable to submit your application right now. Please try again.' });
   }
 };
 

@@ -20,6 +20,7 @@ import interventionRoutes from './routes/interventions';
 import followUpRoutes from './routes/followups';
 import consentRoutes from './routes/consent';
 import adminRoutes from './routes/admin';
+import enrollmentRoutes from './routes/enrollments';
 
 dotenv.config();
 
@@ -146,6 +147,7 @@ app.use('/api/interventions', interventionRoutes);
 app.use('/api/followups', followUpRoutes);
 app.use('/api/consent', consentRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/enrollments', enrollmentRoutes);
 
 // 404 handler for unmatched API routes
 app.use('/api/*', (req, res) => {

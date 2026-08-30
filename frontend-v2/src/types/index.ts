@@ -73,7 +73,7 @@ export interface Batch {
   location?: string;
   startDate?: string;
   endDate?: string;
-  status: 'UPCOMING' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
+  status: 'ACTIVE' | 'UPCOMING' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
   course?: Course;
   provider?: { id: string; name: string };
   trainer?: { id: string; name: string; email: string };
@@ -85,8 +85,8 @@ export interface Enrollment {
   id: string;
   batchId: string;
   traineeId: string;
-  status: 'PENDING' | 'ENROLLED' | 'IN_PROGRESS' | 'COMPLETED' | 'DROPPED';
-  enrolledAt: string;
+  status: 'REQUESTED' | 'UNDER_REVIEW' | 'PENDING' | 'APPROVED' | 'ENROLLED' | 'IN_PROGRESS' | 'COMPLETION_RECOMMENDED' | 'COMPLETED' | 'CERTIFIED' | 'REJECTED' | 'WITHDRAWN' | 'DROPPED';
+  enrolledAt?: string;
   completedAt?: string;
   completionRecommendedAt?: string;
   batch?: Batch;
