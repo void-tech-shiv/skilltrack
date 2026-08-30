@@ -1,0 +1,451 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id            String         @id @default(uuid())
+  name          String
+  type          String         // TRAINING_PROVIDER, EMPLOYER, GOVERNMENT
+  status        String         @default("ACTIVE") // ACTIVE, PENDING, SUSPENDED
+  users         User[]
+  trainers      Trainer[]
+  batches       Batch[]
+  authorizations ProviderCourseAuthorization[]
+  verifications Verification[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model User {
+  id              String        @id @default(uuid())
+  email           String        @unique
+  passwordHash    String
+  role            String        // GOVERNMENT_ADMIN, ANALYST, COURSE_MANAGER, TRAINEE, EMPLOYER, TRAINING_PROVIDER, TRAINER
+  status          String        @default("ACTIVE") // PENDING, UNDER_REVIEW, APPROVED, REJECTED, SUSPENDED, ACTIVE
+  rejectionReason String?
+  approvedAt      DateTime?
+  approvedBy      String?
+  organizationId  String?
+  organization    Organization? @relation(fields: [organizationId], references: [id])
+  traineeId       String?       @unique // Link to Trainee if role is TRAINEE
+  trainee         Trainee?      @relation(fields: [traineeId], references: [id])
+  trainerId       String?       @unique // Link to Trainer if role is TRAINER
+  trainer         Trainer?      @relation(fields: [trainerId], references: [id])
+  emailVerified   Boolean       @default(false)
+  emailVerifiedAt DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model Trainer {
+  id               String               @id @default(uuid())
+  name             String
+  email            String               @unique
+  phone            String?
+  organizationId   String
+  organization     Organization         @relation(fields: [organizationId], references: [id])
+  status           String               @default("APPROVED") // PENDING, APPROVED, REJECTED, ACTIVE, SUSPENDED
+  specialization   String?
+  user             User?
+  batches          Batch[]
+  sessions         Session[]
+  markedAttendance Attendance[]
+  approvedProgress ModuleProgress[]
+  verifiedEvidence EvidenceSubmission[]
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+}
+
+model Trainee {
+  id                    String                  @id @default(uuid())
+  canonicalId           String                  @unique
+  firstName             String
+  lastName              String
+  dob                   DateTime
+  gender                String
+  phone                 String?
+  district              String?
+  division              String?
+  aadhaarNumber         String?
+  apaarAbcId            String?
+  educationLevel        String?
+  category              String?
+  skills                String?                 // Comma separated or JSON string
+  careerGoals           String?
+  consentStatus         Boolean                 @default(false)
+  consentDate           DateTime?
+  
+  user                  User?
+  enrollments           Enrollment[]
+  outcomes              Outcome[]
+  followUps             FollowUp[]
+  verifications         Verification[]
+  interventions         Intervention[]
+  consentLogs           ConsentLog[]
+  evidenceSubmissions   EvidenceSubmission[]
+  certificates          Certificate[]
+  certificateApplications CertificateApplication[]
+  attendanceRecords     Attendance[]
+  
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+}
+
+model Program {
+  id        String   @id @default(uuid())
+  name      String
+  sector    String?
+  courses   Course[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Course {
+  id                     String                        @id @default(uuid())
+  name                   String
+  code                   String?                       @unique
+  description            String?
+  programId              String
+  program                Program                       @relation(fields: [programId], references: [id])
+  skills                 String?                       // JSON string of competencies
+  targetJobRoles         String?                       // JSON string of mapped careers
+  expectedDurationHours  Int                           @default(100)
+  attendanceRequirement  Float                         @default(80.0) // Percentage required
+  moduleRequirement      Float                         @default(80.0) // Percentage required
+  evidenceRequired       Boolean                       @default(true)
+  batches                Batch[]
+  modules                Module[]
+  authorizations         ProviderCourseAuthorization[]
+  certificates           Certificate[]
+  createdAt              DateTime                      @default(now())
+  updatedAt              DateTime                      @updatedAt
+}
+
+model Module {
+  id               String           @id @default(uuid())
+  courseId         String
+  course           Course           @relation(fields: [courseId], references: [id])
+  name             String
+  order            Int
+  description      String?
+  requiredEvidence Boolean          @default(false)
+  progress         ModuleProgress[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+model ProviderCourseAuthorization {
+  id             String       @id @default(uuid())
+  providerId     String
+  provider       Organization @relation(fields: [providerId], references: [id])
+  courseId       String
+  course         Course       @relation(fields: [courseId], references: [id])
+  status         String       @default("AUTHORIZED") // REQUESTED, UNDER_REVIEW, AUTHORIZED, ACTIVE, SUSPENDED, EXPIRED
+  effectiveDate  DateTime     @default(now())
+  expiryDate     DateTime?
+  authorizedBy   String?
+  reason         String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([providerId, courseId])
+}
+
+model Batch {
+  id             String       @id @default(uuid())
+  name           String
+  courseId       String
+  course         Course       @relation(fields: [courseId], references: [id])
+  providerId     String
+  provider       Organization @relation(fields: [providerId], references: [id])
+  trainerId      String?
+  trainer        Trainer?     @relation(fields: [trainerId], references: [id])
+  capacity       Int          @default(30)
+  trainingMode   String       @default("OFFLINE") // OFFLINE, ONLINE, HYBRID
+  location       String?
+  schedule       String?
+  startDate      DateTime
+  endDate        DateTime
+  status         String       @default("ACTIVE") // ACTIVE, COMPLETED, CANCELLED
+  enrollments    Enrollment[]
+  sessions       Session[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model Session {
+  id           String       @id @default(uuid())
+  batchId      String
+  batch        Batch        @relation(fields: [batchId], references: [id])
+  date         DateTime
+  startTime    String?
+  endTime      String?
+  mode         String       @default("OFFLINE") // OFFLINE, ONLINE, HYBRID
+  location     String?
+  trainerId    String?
+  trainer      Trainer?     @relation(fields: [trainerId], references: [id])
+  plannedHours Float        @default(2.0)
+  actualHours  Float        @default(2.0)
+  topic        String?
+  attendance   Attendance[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+model Attendance {
+  id            String    @id @default(uuid())
+  sessionId     String
+  session       Session   @relation(fields: [sessionId], references: [id])
+  traineeId     String
+  trainee       Trainee   @relation(fields: [traineeId], references: [id])
+  status        String    @default("PRESENT") // PRESENT, ABSENT, PARTIAL, LATE
+  trainingHours Float     @default(0)
+  notes         String?
+  verifiedBy    String?
+  trainer       Trainer?  @relation(fields: [verifiedBy], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([sessionId, traineeId])
+}
+
+model Enrollment {
+  id                      String                   @id @default(uuid())
+  traineeId               String
+  trainee                 Trainee                  @relation(fields: [traineeId], references: [id])
+  batchId                 String
+  batch                   Batch                    @relation(fields: [batchId], references: [id])
+  status                  String                   @default("ENROLLED") // REQUESTED, UNDER_REVIEW, APPROVED, ENROLLED, IN_PROGRESS, COMPLETION_RECOMMENDED, COMPLETED, CERTIFIED, REJECTED, WITHDRAWN, DROPPED
+  requestedAt             DateTime                 @default(now())
+  approvedAt              DateTime?
+  approvedBy              String?
+  completionRecommendedBy String?
+  completionRecommendedAt DateTime?
+  completedAt             DateTime?
+  completedBy             String?
+  rejectionReason         String?
+  moduleProgress          ModuleProgress[]
+  evidenceSubmissions     EvidenceSubmission[]
+  certificateApplications CertificateApplication[]
+  certificates            Certificate[]
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+}
+
+model ModuleProgress {
+  id           String     @id @default(uuid())
+  enrollmentId String
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
+  moduleId     String
+  module       Module     @relation(fields: [moduleId], references: [id])
+  status       String     @default("NOT_STARTED") // NOT_STARTED, SUBMITTED, VERIFIED, REJECTED
+  evidenceUrl  String?
+  verifiedBy   String?
+  trainer      Trainer?   @relation(fields: [verifiedBy], references: [id])
+  verifiedAt   DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([enrollmentId, moduleId])
+}
+
+model EvidenceSubmission {
+  id                String     @id @default(uuid())
+  enrollmentId      String
+  enrollment        Enrollment @relation(fields: [enrollmentId], references: [id])
+  traineeId         String
+  trainee           Trainee    @relation(fields: [traineeId], references: [id])
+  title             String
+  fileUrl           String
+  fileType          String     // PDF, IMAGE, DOC
+  description       String?
+  status            String     @default("PENDING") // PENDING, VERIFIED, REJECTED
+  verifiedBy        String?
+  trainer           Trainer?   @relation(fields: [verifiedBy], references: [id])
+  verificationNotes String?
+  verifiedAt        DateTime?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+}
+
+model CertificateApplication {
+  id                String     @id @default(uuid())
+  enrollmentId      String
+  enrollment        Enrollment @relation(fields: [enrollmentId], references: [id])
+  traineeId         String
+  trainee           Trainee    @relation(fields: [traineeId], references: [id])
+  status            String     @default("PENDING") // PENDING, UNDER_REVIEW, APPROVED, REJECTED, CORRECTION_REQUIRED
+  attendancePercent Float      @default(0.0)
+  modulePercent     Float      @default(0.0)
+  evidenceVerified  Boolean    @default(false)
+  decisionReason    String?
+  decisionBy        String?
+  appliedDate       DateTime   @default(now())
+  decidedAt         DateTime?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+}
+
+model Certificate {
+  id                String     @id @default(uuid())
+  certificateNumber String     @unique
+  traineeId         String
+  trainee           Trainee    @relation(fields: [traineeId], references: [id])
+  courseId          String
+  course            Course     @relation(fields: [courseId], references: [id])
+  enrollmentId      String
+  enrollment        Enrollment @relation(fields: [enrollmentId], references: [id])
+  issueDate         DateTime   @default(now())
+  status            String     @default("ISSUED") // ISSUED, REVOKED
+  qrCodeData        String
+  verificationUrl   String
+  approvedBy        String?
+  revokedBy         String?
+  revokedReason     String?
+  revokedAt         DateTime?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+}
+
+model Outcome {
+  id                  String    @id @default(uuid())
+  traineeId           String
+  trainee             Trainee   @relation(fields: [traineeId], references: [id])
+  status              String    // EMPLOYED, SELF_EMPLOYED, APPRENTICESHIP, DROPPED, UNEMPLOYED, STUDYING
+  date                DateTime
+  employerName        String?
+  jobTitle            String?
+  salary              Float?
+  industry            String?
+  notes               String?
+  
+  // PS #26135 Structured Taxonomies
+  nonPlacementReason  String?   // SKILL_MISMATCH, LOCATION_CONSTRAINT, WAGE_EXPECTATION, FURTHER_STUDIES, HEALTH_PERSONAL, OTHER, NONE
+  skillRelevanceScore String?   @default("UNRATED") // HIGH, MEDIUM, LOW, UNRATED
+  retentionCheckpoint String?   @default("INITIAL") // INITIAL, 3_MONTH, 6_MONTH, 12_MONTH
+  
+  // Self Employment Details
+  enterpriseName      String?
+  businessSector      String?
+  monthlyRevenue      Float?
+  registrationType    String?
+  
+  // Apprenticeship Details
+  contractMonths      Int?
+  stipend             Float?
+  convertedToPermanent Boolean? @default(false)
+  
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+}
+
+model Verification {
+  id             String        @id @default(uuid())
+  traineeId      String
+  trainee        Trainee       @relation(fields: [traineeId], references: [id])
+  organizationId String?       // Employer Organization assigned
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  level          String        @default("EMPLOYER")
+  status         String        @default("PENDING") // PENDING, VERIFIED, REJECTED
+  verifiedBy     String?       // User ID
+  evidenceNotes  String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model Intervention {
+  id          String    @id @default(uuid())
+  traineeId   String
+  trainee     Trainee   @relation(fields: [traineeId], references: [id])
+  actionType  String    // COUNSELING, REMEDIAL_TRAINING, ATTENDANCE_ALERT, EMPLOYER_REMATCH, FINANCIAL_ASSISTANCE
+  priority    String    @default("MEDIUM") // HIGH, MEDIUM, LOW
+  status      String    @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CANCELLED
+  assignedTo  String?
+  notes       String?
+  dueDate     DateTime?
+  completedAt DateTime?
+  createdById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model FollowUp {
+  id        String   @id @default(uuid())
+  traineeId String
+  trainee   Trainee  @relation(fields: [traineeId], references: [id])
+  type      String   // 3_MONTH, 6_MONTH, 12_MONTH
+  status    String   // PENDING, COMPLETED, NO_RESPONSE
+  responses String?  // JSON string of survey responses
+  loggedBy  String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ConsentLog {
+  id          String   @id @default(uuid())
+  traineeId   String
+  trainee     Trainee  @relation(fields: [traineeId], references: [id])
+  consentType String   // DATA_SHARING, EMPLOYER_VERIFICATION, OUTCOME_TRACKING
+  granted     Boolean  @default(true)
+  timestamp   DateTime @default(now())
+  ipAddress   String?
+  notes       String?
+  createdAt   DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String
+  action     String
+  resource   String
+  resourceId String?
+  metadata   String?
+  createdAt  DateTime @default(now())
+}
+
+model ImportJob {
+  id            String   @id @default(uuid())
+  fileName      String
+  status        String   // PENDING, PROCESSING, COMPLETED, FAILED
+  totalRows     Int      @default(0)
+  processedRows Int      @default(0)
+  errorCount    Int      @default(0)
+  errors        String?  // JSON string of errors
+  uploadedBy    String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model EmailVerificationChallenge {
+  id            String    @id @default(uuid())
+  email         String
+  userId        String?
+  purpose       String    // ACCOUNT_CREATION, PASSWORD_RESET, EMAIL_CHANGE
+  otpHash       String
+  salt          String
+  expiresAt     DateTime
+  attempts      Int       @default(0)
+  maxAttempts   Int       @default(5)
+  consumedAt    DateTime?
+  verifiedToken String?   // Short-lived signed authorization token after OTP verification
+  resendMessageId String?
+  deliveryStatus  String    @default("sent") // sent, delivered, delivery_delayed, bounced, complained, suppressed
+  deliveryError   String?
+  ipAddress     String?
+  userAgent     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([email, purpose])
+  @@index([resendMessageId])
+}
+
