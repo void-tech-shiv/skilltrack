@@ -56,13 +56,27 @@ export const AdminAnalyticsV2: React.FC = () => {
   // Visual Palette
   const COLORS = ['#0284c7', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4'];
 
-  const nonPlacementData = data?.nonPlacementTaxonomy || [
+  // Safe mapping for nonPlacementData
+  let nonPlacementData = [
     { reason: 'Lack of local relevant jobs in district', percentage: 34, count: 184, category: 'GEOGRAPHY' },
     { reason: 'Mismatch in practical equipment skills', percentage: 28, count: 152, category: 'TECHNICAL' },
     { reason: 'Offer salary below minimum expectations', percentage: 22, count: 119, category: 'COMPENSATION' },
     { reason: 'Opted for higher education / family', percentage: 16, count: 87, category: 'PERSONAL' },
   ];
 
+  if (data?.nonPlacementTaxonomy && Array.isArray(data.nonPlacementTaxonomy) && data.nonPlacementTaxonomy.length > 0) {
+    const total = data.nonPlacementTaxonomy.reduce((sum: number, item: any) => sum + (item.count || 0), 0);
+    if (total > 0) {
+      nonPlacementData = data.nonPlacementTaxonomy.map((item: any) => ({
+        reason: item.reason,
+        count: item.count,
+        percentage: Number(((item.count / total) * 100).toFixed(1)),
+        category: 'ANALYZED'
+      })).sort((a: any, b: any) => b.percentage - a.percentage);
+    }
+  }
+
+  // Safe mapping for wageData
   const wageData = data?.wageProgression || [
     { month: 'Month 1 (Entry)', avgWage: 18500, benchmark: 17000 },
     { month: 'Month 3', avgWage: 21000, benchmark: 18500 },
@@ -71,18 +85,45 @@ export const AdminAnalyticsV2: React.FC = () => {
     { month: 'Month 12', avgWage: 32000, benchmark: 24000 },
   ];
 
-  const retentionData = data?.retentionDistribution || [
+  // Safe mapping for retentionData
+  let retentionData = [
     { checkpoint: '3-Month Check', rate: 92.4, activeCount: 540 },
     { checkpoint: '6-Month Check', rate: 84.6, activeCount: 492 },
     { checkpoint: '12-Month Check', rate: 76.8, activeCount: 448 },
   ];
 
-  const providerLeaderboard = data?.providerLeaderboard || [
+  if (data?.retentionDistribution) {
+    if (Array.isArray(data.retentionDistribution)) {
+      retentionData = data.retentionDistribution;
+    } else {
+      const dist = data.retentionDistribution;
+      const initial = dist['Initial Placement'] || 0;
+      const calcRate = (count: number) => initial > 0 ? Number(((count / initial) * 100).toFixed(1)) : 0;
+      
+      retentionData = [
+        { checkpoint: '3-Month Check', rate: calcRate(dist['3-Month Retained'] || 0), activeCount: dist['3-Month Retained'] || 0 },
+        { checkpoint: '6-Month Check', rate: calcRate(dist['6-Month Retained'] || 0), activeCount: dist['6-Month Retained'] || 0 },
+        { checkpoint: '12-Month Check', rate: calcRate(dist['12-Month Retained'] || 0), activeCount: dist['12-Month Retained'] || 0 },
+      ];
+    }
+  }
+
+  // Safe mapping for providerLeaderboard
+  let providerLeaderboard = [
     { name: 'Tata Strive Pune Center', score: 94, placed: 420, retention: 91 },
     { name: 'L&T Skill Academy Mumbai', score: 91, placed: 380, retention: 89 },
     { name: 'Mahindra Pride Nagpur', score: 88, placed: 310, retention: 84 },
     { name: 'Symbiosis Vocational Academy', score: 85, placed: 290, retention: 82 },
   ];
+
+  if (data?.providerLeaderboard && Array.isArray(data.providerLeaderboard) && data.providerLeaderboard.length > 0) {
+    providerLeaderboard = data.providerLeaderboard.map((p: any) => ({
+      name: p.name,
+      score: p.placementRate || 0,
+      placed: p.totalPlaced || 0,
+      retention: p.completionRate || 0 // Using completionRate as proxy if retention is not available
+    }));
+  }
 
   return (
     <div className="space-y-6">
