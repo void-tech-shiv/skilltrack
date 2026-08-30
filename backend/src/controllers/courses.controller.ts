@@ -59,8 +59,17 @@ export const createCourse = async (req: AuthRequest, res: Response) => {
   try {
     const { name, code, description, programId, skills, targetJobRoles, expectedDurationHours, attendanceRequirement, moduleRequirement, evidenceRequired } = req.body;
 
-    if (!name || !programId) {
-      return res.status(400).json({ error: 'Course name and program are required' });
+    if (!name) {
+      return res.status(400).json({ error: 'Course name is required' });
+    }
+
+    let finalProgramId = programId;
+    if (!finalProgramId) {
+      const defaultProgram = await prisma.program.findFirst();
+      if (!defaultProgram) {
+        return res.status(400).json({ error: 'Program is required, and no default program was found in the database' });
+      }
+      finalProgramId = defaultProgram.id;
     }
 
     const courseCode = code || `CRS-${Date.now().toString().slice(-4)}`;
@@ -70,7 +79,7 @@ export const createCourse = async (req: AuthRequest, res: Response) => {
         name,
         code: courseCode,
         description,
-        programId,
+        programId: finalProgramId,
         skills: typeof skills === 'string' ? skills : JSON.stringify(skills || []),
         targetJobRoles: typeof targetJobRoles === 'string' ? targetJobRoles : JSON.stringify(targetJobRoles || []),
         expectedDurationHours: parseInt(expectedDurationHours) || 100,

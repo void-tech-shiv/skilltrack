@@ -198,6 +198,25 @@ export const verifyEvidence = async (req: AuthRequest, res: Response) => {
 };
 
 // 5. COMPLETION WORKFLOW
+export const getPendingCompletions = async (req: AuthRequest, res: Response) => {
+  try {
+    const pending = await prisma.enrollment.findMany({
+      where: { status: 'COMPLETION_RECOMMENDED' },
+      include: {
+        trainee: true,
+        batch: { include: { course: true } },
+        attendance: true,
+        evidenceSubmissions: true
+      },
+      orderBy: { completionRecommendedAt: 'desc' }
+    });
+    res.json({ pending });
+  } catch (error) {
+    console.error('getPendingCompletions Error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 export const recommendCompletion = async (req: AuthRequest, res: Response) => {
   try {
     const { enrollmentId } = req.body;

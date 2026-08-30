@@ -6,6 +6,7 @@ import {
   updateModuleProgress,
   submitEvidence,
   verifyEvidence,
+  getPendingCompletions,
   recommendCompletion,
   approveCompletion
 } from '../controllers/training.controller';
@@ -28,6 +29,7 @@ router.post('/evidence', authenticate, authorize(['TRAINEE']), submitEvidence);
 router.put('/evidence/:id', authenticate, authorize(['GOVERNMENT_ADMIN', 'TRAINER']), verifyEvidence);
 
 // Completion Workflows
+router.get('/completions/pending', authenticate, authorize(['GOVERNMENT_ADMIN', 'COURSE_MANAGER']), getPendingCompletions);
 router.post('/recommend-completion', authenticate, authorize(['GOVERNMENT_ADMIN', 'TRAINER']), recommendCompletion);
 router.post('/approve-completion', authenticate, authorize(['GOVERNMENT_ADMIN', 'COURSE_MANAGER']), approveCompletion);
 

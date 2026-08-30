@@ -15,7 +15,7 @@ export const CompletionApprovalsV2: React.FC = () => {
   const fetchRecommendations = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/courses/completions/pending').catch(() => ({ pending: [] }));
+      const res = await api.get('/training/completions/pending').catch(() => ({ pending: [] }));
       setRecommendations(res.pending || []);
     } catch (err) {
       console.error('Error fetching completions:', err);
@@ -30,11 +30,21 @@ export const CompletionApprovalsV2: React.FC = () => {
 
   const handleApproveCompletion = async (enrollmentId: string) => {
     try {
-      await api.post(`/courses/completions/${enrollmentId}/approve`);
+      await api.post('/training/approve-completion', { enrollmentId, action: 'APPROVE' });
       setSuccess('Course completion officially approved! Candidate unlocked for Certificate Application.');
       fetchRecommendations();
     } catch (err: any) {
       setError(err.message || 'Failed to approve course completion.');
+    }
+  };
+
+  const handleRejectCompletion = async (enrollmentId: string) => {
+    try {
+      await api.post('/training/approve-completion', { enrollmentId, action: 'REJECT' });
+      setSuccess('Course completion returned for revision.');
+      fetchRecommendations();
+    } catch (err: any) {
+      setError(err.message || 'Failed to reject course completion.');
     }
   };
 
@@ -92,13 +102,20 @@ export const CompletionApprovalsV2: React.FC = () => {
       header: 'Final Compliance Approval',
       align: 'right',
       render: (item) => (
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-end space-x-2">
+          <button
+            onClick={() => handleRejectCompletion(item.id)}
+            className="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-xl shadow-subtle transition flex items-center space-x-1.5"
+          >
+            <XCircle className="w-3.5 h-3.5" />
+            <span>Reject</span>
+          </button>
           <button
             onClick={() => handleApproveCompletion(item.id)}
             className="px-3.5 py-1.5 bg-brand-900 hover:bg-brand-800 text-white text-xs font-bold rounded-xl shadow-subtle transition flex items-center space-x-1.5"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Approve Course Completion</span>
+            <span>Approve</span>
           </button>
         </div>
       ),

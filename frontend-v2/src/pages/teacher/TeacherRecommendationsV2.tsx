@@ -29,7 +29,7 @@ export const TeacherRecommendationsV2: React.FC = () => {
 
   const handleRecommend = async (enrollmentId: string) => {
     try {
-      await api.post(`/courses/completions/${enrollmentId}/recommend`);
+      await api.post('/training/recommend-completion', { enrollmentId });
       setSuccess('Learner officially recommended for course completion to Course Manager!');
       fetchEnrollments();
     } catch (err: any) {
