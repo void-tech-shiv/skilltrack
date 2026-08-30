@@ -171,7 +171,7 @@ export const AdminApprovalsV2: React.FC = () => {
     if (!selectedProviderId || !selectedCourseId) return;
 
     try {
-      await api.post(`/providers/${selectedProviderId}/courses`, { courseId: selectedCourseId });
+      await api.post(`/providers/authorize-course`, { providerId: selectedProviderId, courseId: selectedCourseId });
       setActionSuccess('Training Provider officially accredited for the selected course.');
       setAuthModalOpen(false);
       fetchData();
