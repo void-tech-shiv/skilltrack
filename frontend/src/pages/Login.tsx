@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { ShieldCheck, Briefcase, GraduationCap, Building2, BookOpen, Users, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { EmailVerificationModal } from '../components/EmailVerificationModal';
 import { API_BASE_URL } from '../config';
 
@@ -9,8 +9,8 @@ export const Login: React.FC = () => {
   const [tab, setTab] = useState<'login' | 'register_trainee' | 'register_employer'>('login');
   
   // Login State
-  const [email, setEmail] = useState('admin@maha.gov.in');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
@@ -222,15 +222,7 @@ export const Login: React.FC = () => {
     }
   };
 
-  // Exact 6 Standardized Roles
-  const quickRoles = [
-    { label: 'Government Admin', email: 'admin@maha.gov.in', icon: ShieldCheck, color: 'bg-emerald-700 hover:bg-emerald-800' },
-    { label: 'Course Manager', email: 'coursemanager@maha.gov.in', icon: BookOpen, color: 'bg-blue-700 hover:bg-blue-800' },
-    { label: 'Training Provider', email: 'provider@maha.gov.in', icon: Building2, color: 'bg-amber-700 hover:bg-amber-800' },
-    { label: 'Teacher', email: 'trainer@maha.gov.in', icon: Users, color: 'bg-teal-700 hover:bg-teal-800' },
-    { label: 'Employer', email: 'employer@maha.gov.in', icon: Briefcase, color: 'bg-slate-700 hover:bg-slate-800' },
-    { label: 'Learner', email: 'trainee@maha.gov.in', icon: GraduationCap, color: 'bg-sky-700 hover:bg-sky-800' }
-  ];
+
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -315,33 +307,6 @@ export const Login: React.FC = () => {
 
           {/* TAB 1: LOGIN */}
           {tab === 'login' && (
-            <>
-              {/* Quick Select Pill Buttons */}
-              <div className="mb-6">
-                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2.5">
-                  1-Click Role Login (Select User Persona):
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {quickRoles.map((r) => {
-                    const Icon = r.icon;
-                    return (
-                      <button
-                        key={r.email}
-                        type="button"
-                        onClick={() => {
-                          setEmail(r.email);
-                          setPassword('password123');
-                        }}
-                        className={`flex items-center space-x-1.5 px-3 py-2 rounded text-white text-xs font-semibold ${r.color} shadow-sm transition-transform active:scale-95`}
-                      >
-                        <Icon className="w-4 h-4 flex-shrink-0" />
-                        <span>{r.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
               <form className="space-y-4" onSubmit={handleLoginSubmit}>
                 <div>
                   <label className="block text-sm font-medium text-slate-700">Official Email ID</label>
@@ -381,7 +346,6 @@ export const Login: React.FC = () => {
                   {loading ? 'Authenticating...' : 'Sign In to Portal'}
                 </button>
               </form>
-            </>
           )}
 
           {/* TAB 2: LEARNER SELF-REGISTRATION */}
