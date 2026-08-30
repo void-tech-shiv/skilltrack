@@ -15,8 +15,9 @@ out/
 .env.development.local
 .env.test.local
 .env.production.local
-*.env
 !.env.example
+!.env.production
+!.env.development
 
 # Logs
 npm-debug.log*

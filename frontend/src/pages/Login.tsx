@@ -63,15 +63,26 @@ export const Login: React.FC = () => {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        throw new Error(data.error || 'Authentication failed');
+        if (res.status === 401) {
+          throw new Error('Invalid official email or password.');
+        } else if (res.status === 403) {
+          throw new Error(data.error || 'Access forbidden: Insufficient privileges.');
+        } else if (res.status === 500) {
+          throw new Error('Server is temporarily unavailable. Please try again.');
+        }
+        throw new Error(data.error || data.message || `Authentication failed (Status ${res.status})`);
       }
 
       login(data.token, data.user);
     } catch (err: any) {
-      setError(err.message);
+      if (err.name === 'TypeError' && err.message.includes('fetch')) {
+        setError('Unable to connect to the authentication server. Please check your internet connection or try again.');
+      } else {
+        setError(err.message || 'Authentication failed. Please verify credentials.');
+      }
     } finally {
       setLoading(false);
     }

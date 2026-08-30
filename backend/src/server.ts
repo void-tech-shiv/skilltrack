@@ -30,28 +30,42 @@ import { prisma } from './lib/prisma';
 export { prisma };
 
 // Configure dynamic allowed origins
-const allowedOrigins = [
+const envOrigins = [
   process.env.CORS_ORIGIN,
   process.env.FRONTEND_URL,
-  process.env.FRONTEND_V2_URL,
+  process.env.FRONTEND_V2_URL
+].filter(Boolean).flatMap(str => str!.split(',')).map(s => s.trim().replace(/\/$/, '')).filter(Boolean);
+
+const allowedOrigins = Array.from(new Set([
+  ...envOrigins,
+  'https://skilltrack-frontend-beta.vercel.app',
   'http://localhost:5173',
   'http://localhost:5174',
   'http://localhost:3000',
   'http://localhost:5000'
-].filter(Boolean) as string[];
+]));
 
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
     // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+    
+    const cleanOrigin = origin.trim().replace(/\/$/, '');
+    const isAllowed = 
+      allowedOrigins.includes(cleanOrigin) ||
+      cleanOrigin.endsWith('.vercel.app') ||
+      cleanOrigin.includes('localhost') ||
+      process.env.NODE_ENV !== 'production';
+
+    if (isAllowed) {
       return callback(null, true);
     }
-    return callback(new Error('CORS request blocked: Origin not allowed'));
+    console.warn(`[CORS Blocked] Origin: ${origin}`);
+    return callback(new Error(`CORS request blocked for origin: ${origin}`));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 };
 
 // Security Middleware

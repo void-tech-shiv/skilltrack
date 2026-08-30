@@ -1,4 +1,20 @@
-const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/$/, '');
+const getApiBase = (): string => {
+  let url = import.meta.env.VITE_API_URL as string | undefined;
+  if (!url || url.trim() === '') {
+    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      url = 'https://skilltrack-backend-0fsr.onrender.com/api';
+    } else {
+      url = 'http://localhost:5000/api';
+    }
+  }
+  url = url.trim().replace(/\/$/, '');
+  if (!url.endsWith('/api')) {
+    url = `${url}/api`;
+  }
+  return url;
+};
+
+const API_BASE = getApiBase();
 
 interface RequestOptions extends RequestInit {
   token?: string | null;
@@ -48,27 +64,39 @@ export async function apiRequest<T = any>(
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      const errorMsg = data.message || data.error || `HTTP error ${res.status}`;
+      let errorMsg = data.message || data.error;
+      if (!errorMsg) {
+        if (res.status === 401) errorMsg = 'Invalid official email or password.';
+        else if (res.status === 403) errorMsg = 'Access forbidden: Insufficient privileges.';
+        else if (res.status === 500) errorMsg = 'Server is temporarily unavailable. Please try again.';
+        else errorMsg = `Request failed with status ${res.status}`;
+      }
       throw new ApiError(errorMsg, res.status, data);
     }
 
     return data as T;
   } catch (err: any) {
     if (err instanceof ApiError) throw err;
+    if (err.name === 'TypeError' && err.message.includes('fetch')) {
+      throw new ApiError('Unable to connect to the authentication server. Please check your internet connection or try again.', 0);
+    }
     throw new ApiError(err.message || 'Network connection failed', 0);
   }
 }
 
 export const api = {
-  get: <T = any>(endpoint: string, options?: RequestOptions) => 
+  get: <T = any>(endpoint: string, options?: RequestOptions) =>
     apiRequest<T>(endpoint, { ...options, method: 'GET' }),
-    
-  post: <T = any>(endpoint: string, body?: any, options?: RequestOptions) => 
+
+  post: <T = any>(endpoint: string, body?: any, options?: RequestOptions) =>
     apiRequest<T>(endpoint, { ...options, method: 'POST', body }),
-    
-  put: <T = any>(endpoint: string, body?: any, options?: RequestOptions) => 
+
+  put: <T = any>(endpoint: string, body?: any, options?: RequestOptions) =>
     apiRequest<T>(endpoint, { ...options, method: 'PUT', body }),
-    
-  delete: <T = any>(endpoint: string, options?: RequestOptions) => 
+
+  patch: <T = any>(endpoint: string, body?: any, options?: RequestOptions) =>
+    apiRequest<T>(endpoint, { ...options, method: 'PATCH', body }),
+
+  delete: <T = any>(endpoint: string, options?: RequestOptions) =>
     apiRequest<T>(endpoint, { ...options, method: 'DELETE' }),
 };
