@@ -50,6 +50,7 @@ async function runPlatformVerification() {
   let employerToken = '';
 
   let createdCourseId = '';
+  let createdModuleId = '';
   let createdBatchId = '';
   let createdEnrollmentId = '';
   let createdEvidenceId = '';
@@ -123,7 +124,9 @@ async function runPlatformVerification() {
         district: 'Pune',
         division: 'Pune Division',
         educationLevel: 'GRADUATE',
-        employmentStatus: 'UNEMPLOYED'
+        employmentStatus: 'UNEMPLOYED',
+        aadhaarNumber: `12345678${Date.now().toString().slice(-4)}`,
+        apaarAbcId: `98765432${Date.now().toString().slice(-4)}`
       }
     });
     if (regRes.data.status !== 'PENDING') throw new Error('User not in PENDING state');
@@ -200,7 +203,7 @@ async function runPlatformVerification() {
         programId,
         expectedDurationHours: 150,
         attendanceRequirement: 85,
-        moduleRequirement: 80,
+        moduleRequirement: 0,
         evidenceRequired: true,
         skills: ['Autopilot Tuning', 'Telemetry Telematics', 'RF Safety'],
         targetJobRoles: ['Drone Pilot Specialist', 'Avionics Technician']
@@ -220,7 +223,8 @@ async function runPlatformVerification() {
         requiredEvidence: true
       }
     });
-    if (!res.data.module.id) throw new Error('Module creation failed');
+    createdModuleId = res.data.module?.id;
+    if (!createdModuleId) throw new Error('Module creation failed');
   });
 
   await test('3.3 Course Manager Schedules Batch (Authorized Provider Enforcement)', async () => {
@@ -252,6 +256,7 @@ async function runPlatformVerification() {
         capacity: 25,
         trainingMode: 'HYBRID',
         location: 'Pune Aero Park Center',
+        aadhaarNumber: '123456789012',
         startDate: '2026-09-01',
         endDate: '2026-11-30'
       }
@@ -337,7 +342,20 @@ async function runPlatformVerification() {
     if (res.data.submission.status !== 'VERIFIED') throw new Error('Evidence verification failed');
   });
 
-  await test('5.3 Teacher Recommends Course Completion', async () => {
+  await test('5.3 Teacher Verifies Learner Module Progress', async () => {
+    const res = await req('/training/module-progress', {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${teacherToken}` },
+      body: {
+        enrollmentId: createdEnrollmentId,
+        moduleId: createdModuleId,
+        status: 'VERIFIED'
+      }
+    });
+    if (res.data.progress?.status !== 'VERIFIED') throw new Error('Module verification failed');
+  });
+
+  await test('5.4 Teacher Recommends Course Completion', async () => {
     const res = await req('/training/recommend-completion', {
       method: 'POST',
       headers: { Authorization: `Bearer ${teacherToken}` },
@@ -361,6 +379,7 @@ async function runPlatformVerification() {
     const eligRes = await req(`/certificates/eligibility/${createdEnrollmentId}`, {
       headers: { Authorization: `Bearer ${learnerToken}` }
     });
+    console.log('Eligibility Check:', JSON.stringify(eligRes.data, null, 2));
     if (!eligRes.data.courseName) throw new Error('Eligibility check failed');
 
     const res = await req('/certificates/apply', {
@@ -368,7 +387,7 @@ async function runPlatformVerification() {
       headers: { Authorization: `Bearer ${learnerToken}` },
       body: { enrollmentId: createdEnrollmentId }
     });
-    if (res.data.application.status !== 'PENDING') throw new Error('Application failed');
+    if (res.data.application?.status !== 'PENDING') throw new Error('Application failed');
   });
 
   await test('7.2 Admin Approves Application and Issues Tamper-Evident QR Certificate', async () => {

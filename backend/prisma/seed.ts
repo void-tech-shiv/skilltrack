@@ -31,7 +31,7 @@ async function main() {
   await prisma.trainee.deleteMany();
   await prisma.organization.deleteMany();
 
-  const passwordHash = await bcrypt.hash('PS135', 10);
+  const passwordHash = await bcrypt.hash('password123', 10);
 
   // 1. Create Organizations
   const govOrg = await prisma.organization.create({
@@ -58,7 +58,7 @@ async function main() {
   const trainer1 = await prisma.trainer.create({
     data: {
       name: 'Rajesh Sharma',
-      email: 'trainer@gmail.com',
+      email: 'trainer@maha.gov.in',
       phone: '9820011223',
       organizationId: provider1.id,
       status: 'APPROVED',
@@ -83,7 +83,7 @@ async function main() {
     { email: 'coursemanager@gmail.com', role: 'COURSE_MANAGER', orgId: govOrg.id, trainerId: null },
     { email: 'courcemanager@gmail.com', role: 'COURSE_MANAGER', orgId: govOrg.id, trainerId: null },
     { email: 'provider@gmail.com', role: 'TRAINING_PROVIDER', orgId: provider1.id, trainerId: null },
-    { email: 'trainer@gmail.com', role: 'TRAINER', orgId: provider1.id, trainerId: trainer1.id },
+    { email: 'trainer@maha.gov.in', role: 'TRAINER', orgId: provider1.id, trainerId: trainer1.id },
     { email: 'teacher@gmail.com', role: 'TRAINER', orgId: provider2.id, trainerId: trainer2.id },
     { email: 'analyst@gmail.com', role: 'ANALYST', orgId: govOrg.id, trainerId: null },
     { email: 'employer@gmail.com', role: 'EMPLOYER', orgId: employer1.id, trainerId: null },

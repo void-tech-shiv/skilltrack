@@ -33,7 +33,7 @@ async function runRegistrationIdentityTests() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       email: `invalid_aadhaar_${Date.now()}@example.com`,
-      password: 'Password123!',
+      password: 'password123!',
       firstName: 'Rohan',
       lastName: 'Sharma',
       aadhaarNumber: '12345', // < 12 digits
@@ -48,7 +48,7 @@ async function runRegistrationIdentityTests() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       email: `invalid_aadhaar2_${Date.now()}@example.com`,
-      password: 'Password123!',
+      password: 'password123!',
       firstName: 'Rohan',
       lastName: 'Sharma',
       aadhaarNumber: '12345678901A', // alphanumeric
@@ -65,7 +65,7 @@ async function runRegistrationIdentityTests() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       email: `invalid_apaar_${Date.now()}@example.com`,
-      password: 'Password123!',
+      password: 'password123!',
       firstName: 'Rohan',
       lastName: 'Sharma',
       aadhaarNumber: '777766665555',
@@ -82,7 +82,7 @@ async function runRegistrationIdentityTests() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       email: testEmail,
-      password: 'Password123!',
+      password: 'password123!',
       firstName: 'Ananya',
       lastName: 'Deshmukh',
       aadhaarNumber: ` ${validAadhaar.slice(0, 4)} ${validAadhaar.slice(4, 8)} ${validAadhaar.slice(8)} `, // test spacing normalization
@@ -115,7 +115,7 @@ async function runRegistrationIdentityTests() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       email: `dup_aadhaar_${Date.now()}@example.com`,
-      password: 'Password123!',
+      password: 'password123!',
       firstName: 'Pooja',
       lastName: 'Patil',
       aadhaarNumber: validAadhaar,
@@ -130,7 +130,7 @@ async function runRegistrationIdentityTests() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       email: `dup_apaar_${Date.now()}@example.com`,
-      password: 'Password123!',
+      password: 'password123!',
       firstName: 'Pooja',
       lastName: 'Patil',
       aadhaarNumber: String(Math.floor(100000000000 + Math.random() * 899999999999)),
