@@ -102,12 +102,14 @@ const Protected: React.FC<{
 };
 
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
+import { BackendStartupGate } from './components/ui/BackendStartupGate';
 
 export const App: React.FC = () => {
   return (
     <ErrorBoundary>
-      <Router>
-        <AuthProvider>
+      <BackendStartupGate>
+        <Router>
+          <AuthProvider>
           <Routes>
             {/* Public Landing, Authentication & Registration Routes */}
             <Route path="/" element={<LandingPageV2 />} />
@@ -169,6 +171,7 @@ export const App: React.FC = () => {
           </Routes>
         </AuthProvider>
       </Router>
+      </BackendStartupGate>
     </ErrorBoundary>
   );
 };

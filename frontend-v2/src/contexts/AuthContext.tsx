@@ -45,8 +45,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         logout();
       }
-    } catch {
-      logout();
+    } catch (err: any) {
+      if (err.status === 401 || err.status === 403) {
+        logout();
+      } else {
+        console.error('Failed to fetch user due to server error:', err);
+      }
     } finally {
       setLoading(false);
     }

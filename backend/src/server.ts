@@ -30,6 +30,11 @@ const port = process.env.PORT || 5000;
 import { prisma } from './lib/prisma';
 export { prisma };
 
+// Initialize DB Connection
+prisma.$connect()
+  .then(() => console.log('DATABASE CONNECTED'))
+  .catch((e) => console.error('Database connection failed:', e));
+
 // Configure dynamic allowed origins
 const envOrigins = [
   process.env.CORS_ORIGIN,
@@ -73,6 +78,22 @@ const corsOptions: cors.CorsOptions = {
 app.use(helmet());
 app.use(cors(corsOptions));
 app.use(express.json());
+
+// Request Logging Middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  console.log(`[REQUEST START] ${req.method} ${req.url}`);
+  
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    if (res.statusCode >= 400) {
+      console.log(`[REQUEST FAILURE] ${req.method} ${req.url} - ${res.statusCode} (${duration}ms)`);
+    } else {
+      console.log(`[REQUEST SUCCESS] ${req.method} ${req.url} - ${res.statusCode} (${duration}ms)`);
+    }
+  });
+  next();
+});
 
 // Rate Limiting
 const limiter = rateLimit({
@@ -164,5 +185,5 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 });
 
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  console.log(`SERVER STARTED on port ${port}`);
 });
