@@ -20,7 +20,7 @@ export const TeacherAttendanceV2: React.FC = () => {
       try {
         setLoading(true);
         const [sRes, lRes] = await Promise.all([
-          api.get('/sessions').catch(() => ({ sessions: [] })),
+          api.get('/training/sessions').catch(() => ({ sessions: [] })),
           api.get('/trainees').catch(() => ({ trainees: [] })),
         ]);
 
@@ -82,7 +82,7 @@ export const TeacherAttendanceV2: React.FC = () => {
         trainingHours: data.hours,
       }));
 
-      await api.post(`/sessions/${selectedSessionId}/attendance`, { records });
+      await api.post(`/training/attendance`, { sessionId: selectedSessionId, records });
       setSuccess('Classroom attendance & training hours officially recorded and synchronized!');
     } catch (err: any) {
       setError(err.message || 'Failed to submit attendance.');

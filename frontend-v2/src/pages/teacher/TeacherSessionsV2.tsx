@@ -26,7 +26,7 @@ export const TeacherSessionsV2: React.FC = () => {
     try {
       setLoading(true);
       const [sRes, bRes] = await Promise.all([
-        api.get('/sessions').catch(() => ({ sessions: [] })),
+        api.get('/training/sessions').catch(() => ({ sessions: [] })),
         api.get('/batches').catch(() => ({ batches: [] })),
       ]);
 
@@ -51,7 +51,7 @@ export const TeacherSessionsV2: React.FC = () => {
     if (!batchId) return;
 
     try {
-      await api.post('/sessions', {
+      await api.post('/training/sessions', {
         batchId,
         topic,
         plannedHours: Number(plannedHours),

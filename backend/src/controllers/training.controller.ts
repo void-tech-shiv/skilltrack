@@ -142,6 +142,23 @@ export const updateModuleProgress = async (req: AuthRequest, res: Response) => {
 };
 
 // 4. EVIDENCE SUBMISSION & REVIEW
+export const getPendingEvidence = async (req: AuthRequest, res: Response) => {
+  try {
+    const pending = await prisma.evidenceSubmission.findMany({
+      where: { status: 'PENDING' },
+      include: {
+        enrollment: { include: { batch: { include: { course: true } } } },
+        trainee: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json({ pending });
+  } catch (error) {
+    console.error('getPendingEvidence Error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 export const submitEvidence = async (req: AuthRequest, res: Response) => {
   try {
     const user = req.user;

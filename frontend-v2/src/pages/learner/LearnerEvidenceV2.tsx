@@ -52,7 +52,7 @@ export const LearnerEvidenceV2: React.FC = () => {
     if (!enrollmentId || !title) return;
 
     try {
-      await api.post('/evidence/submit', {
+      await api.post('/training/evidence', {
         enrollmentId,
         title,
         description,

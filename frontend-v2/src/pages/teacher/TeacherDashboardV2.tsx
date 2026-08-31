@@ -30,7 +30,7 @@ export const TeacherDashboardV2: React.FC = () => {
         setLoading(true);
         const [bRes, eRes] = await Promise.all([
           api.get('/batches').catch(() => ({ batches: [] })),
-          api.get('/evidence/pending').catch(() => ({ pending: [] })),
+          api.get('/training/evidence/pending').catch(() => ({ pending: [] })),
         ]);
 
         setBatches(bRes.batches || []);

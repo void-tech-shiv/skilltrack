@@ -250,3 +250,93 @@ export const logAadhaarView = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ error: 'Internal server error logging audit' });
   }
 };
+
+export const getTraineeEvidence = async (req: AuthRequest, res: Response) => {
+  try {
+    let id = req.params.id as string;
+    const user = req.user;
+    if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+    if (id === 'me') {
+      if (user.role !== 'TRAINEE' || !user.traineeId) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+      id = user.traineeId;
+    }
+
+    const submissions = await prisma.evidenceSubmission.findMany({
+      where: { traineeId: id },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json({ submissions });
+  } catch (error) {
+    console.error('getTraineeEvidence Error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const getTraineeEmployment = async (req: AuthRequest, res: Response) => {
+  try {
+    let id = req.params.id as string;
+    const user = req.user;
+    if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+    if (id === 'me') {
+      if (user.role !== 'TRAINEE' || !user.traineeId) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+      id = user.traineeId;
+    }
+
+    // Assuming we fetch outcomes (employment records)
+    const outcomes = await prisma.outcome.findMany({
+      where: { traineeId: id },
+      orderBy: { date: 'desc' }
+    });
+    
+    // For LearnerEmploymentV2 it expects `{ record: null | Outcome }`
+    const record = outcomes.length > 0 ? outcomes[0] : null;
+    res.json({ record });
+  } catch (error) {
+    console.error('getTraineeEmployment Error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const requestEmploymentVerification = async (req: AuthRequest, res: Response) => {
+  try {
+    let id = req.params.id as string;
+    const user = req.user;
+    const { employerId, designation, salary, date } = req.body;
+
+    if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+    if (id === 'me') {
+      if (user.role !== 'TRAINEE' || !user.traineeId) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+      id = user.traineeId;
+    }
+
+    let empName = 'Unknown Employer';
+    if (employerId) {
+      const org = await prisma.organization.findUnique({ where: { id: employerId } });
+      if (org) empName = org.name;
+    }
+
+    const outcome = await prisma.outcome.create({
+      data: {
+        traineeId: id,
+        employerName: empName,
+        jobTitle: designation,
+        salary: salary ? parseFloat(salary) : null,
+        date: date ? new Date(date) : new Date(),
+        status: 'PENDING'
+      }
+    });
+    res.status(201).json({ message: 'Employment verification requested', record: outcome });
+  } catch (error) {
+    console.error('requestEmploymentVerification Error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};

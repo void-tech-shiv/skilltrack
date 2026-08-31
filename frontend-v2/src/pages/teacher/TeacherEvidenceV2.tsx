@@ -19,7 +19,7 @@ export const TeacherEvidenceV2: React.FC = () => {
   const fetchEvidence = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/evidence/pending').catch(() => ({ pending: [] }));
+      const res = await api.get('/training/evidence/pending').catch(() => ({ pending: [] }));
       setEvidenceList(res.pending || []);
     } catch (err) {
       console.error('Error fetching evidence queue:', err);
@@ -36,7 +36,7 @@ export const TeacherEvidenceV2: React.FC = () => {
     if (!selectedEvidence) return;
 
     try {
-      await api.put(`/evidence/${selectedEvidence.id}/verify`, {
+      await api.put(`/training/evidence/${selectedEvidence.id}`, {
         status,
         notes: verificationNotes || (status === 'VERIFIED' ? 'Verified lab evidence meets competency criteria.' : 'Evidence rejected.'),
       });

@@ -4,6 +4,7 @@ import {
   createSession,
   markAttendance,
   updateModuleProgress,
+  getPendingEvidence,
   submitEvidence,
   verifyEvidence,
   getPendingCompletions,
@@ -25,6 +26,7 @@ router.post('/attendance', authenticate, authorize(['GOVERNMENT_ADMIN', 'TRAININ
 router.put('/module-progress', authenticate, authorize(['GOVERNMENT_ADMIN', 'TRAINER', 'TRAINEE']), updateModuleProgress);
 
 // Evidence Submissions
+router.get('/evidence/pending', authenticate, authorize(['GOVERNMENT_ADMIN', 'TRAINER']), getPendingEvidence);
 router.post('/evidence', authenticate, authorize(['TRAINEE']), submitEvidence);
 router.put('/evidence/:id', authenticate, authorize(['GOVERNMENT_ADMIN', 'TRAINER']), verifyEvidence);
 
